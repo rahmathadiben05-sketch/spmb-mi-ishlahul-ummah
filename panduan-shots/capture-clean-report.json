@@ -1,0 +1,69 @@
+{
+  "site": "https://export-aistudio.vercel.app/",
+  "startedAt": "2026-11-11T06:34:31.991Z",
+  "results": [
+    {
+      "viewport": "hp",
+      "wa": "081299990006",
+      "nik": "3578011506210006",
+      "kk": "3578011506210007",
+      "checks": {
+        "pinScreenLabel": true,
+        "syncWarning": false,
+        "footerWA": true,
+        "loginPlaceholder": true
+      },
+      "shots": [
+        "01-beranda",
+        "02-akun",
+        "02b-simpan-pin",
+        "03-langkah1",
+        "04-langkah2",
+        "05-langkah3",
+        "06-langkah4",
+        "07-review",
+        "08-sukses-1",
+        "08-sukses-2",
+        "09-cek-status"
+      ],
+      "tempRegNo": "MIIU/SPMB/2027/0001",
+      "tempPin": "742438",
+      "kelurahan": "KWANGSAN",
+      "officialRegNo": "MIIU/SPMB/2027/0005",
+      "officialPin": "742438",
+      "error": "dashboard tidak tampil: badge Akun Aktif tidak muncul setelah login"
+    },
+    {
+      "viewport": "pc",
+      "wa": "081299990014",
+      "nik": "3578011506210014",
+      "kk": "3578011506210015",
+      "checks": {
+        "pinScreenLabel": true,
+        "syncWarning": false,
+        "footerWA": true,
+        "loginPlaceholder": true
+      },
+      "shots": [
+        "01-beranda",
+        "02-akun",
+        "02b-simpan-pin",
+        "03-langkah1",
+        "04-langkah2",
+        "05-langkah3",
+        "06-langkah4",
+        "07-review",
+        "08-sukses-1",
+        "08-sukses-2",
+        "09-cek-status"
+      ],
+      "tempRegNo": "MIIU/SPMB/2027/0001",
+      "tempPin": "708095",
+      "kelurahan": "KWANGSAN",
+      "officialRegNo": "MIIU/SPMB/2027/0006",
+      "officialPin": "708095",
+      "error": "dashboard tidak tampil: badge Akun Aktif tidak muncul setelah login"
+    }
+  ],
+  "finishedAt": "2026-11-11T06:39:34.109Z"
+}

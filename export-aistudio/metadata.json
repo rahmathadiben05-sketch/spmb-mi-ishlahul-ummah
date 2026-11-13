@@ -1,0 +1,6 @@
+{
+  "name": "Smart Madrasah SPMB",
+  "description": "Sistem Penerimaan Murid Baru (SPMB) Madrasah dengan Validasi Token, Wizard 4 Step, Dashboard Admin & Kepala Madrasah, Verifikasi Berkas, dan Cetak Bukti.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,20 @@
+# Dependencies & build
+node_modules/
+.next/
+out/
+dist/
+.vercel/
+
+# Env (nilai asli) — template .env.example tetap ikut
+.env
+.env.local
+.env.production
+*.local
+
+# Build / cache
+*.tsbuildinfo
+*.log
+.DS_Store
+
+# Test artifacts lokal (bukan bagian repo)
+test-uploads/
