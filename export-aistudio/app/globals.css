@@ -299,6 +299,17 @@
   transform: translateY(-4px);
   filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.55));
 }
+/* Cahaya halus di belakang logo kurikulum (13 Nov, permintaan Rahmat):
+   setelah chip dilepas, teks biru tua kedua logo kurang kontras di atas
+   hijau tua. Glow putih lembut mengangkat teks tanpa mengembalikan kotak
+   chip. Aturan ini diletakkan sesudah .logo-band-item--in supaya menang
+   pada spesifisitas yang sama. */
+.logo-band-item--glow {
+  filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.6)) drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
+}
+.logo-band-item--glow:hover {
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.7)) drop-shadow(0 14px 20px rgba(0, 0, 0, 0.55));
+}
 @media (prefers-reduced-motion: reduce) {
   .logo-band-item,
   .logo-band-item--in {

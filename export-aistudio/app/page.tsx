@@ -1124,7 +1124,7 @@ export default function HomePage() {
                 <img
                   src="/kurikulum-merdeka.png"
                   alt="Kurikulum Merdeka"
-                  className={`h-10 sm:h-12 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                  className={`h-10 sm:h-12 w-auto logo-band-item logo-band-item--glow${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '320ms' }}
                   width={238}
                   height={230}
@@ -1132,7 +1132,7 @@ export default function HomePage() {
                 <img
                   src="/kurikulum-berbasis-cinta.png"
                   alt="Kurikulum Berbasis Cinta"
-                  className={`h-10 sm:h-12 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                  className={`h-10 sm:h-12 w-auto logo-band-item logo-band-item--glow${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '400ms' }}
                   width={1024}
                   height={1024}
