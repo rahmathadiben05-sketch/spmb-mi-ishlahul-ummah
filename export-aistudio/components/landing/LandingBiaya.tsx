@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Wallet, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Wallet, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { FeeItem, SchoolSettings } from '@/lib/types';
 import { DEFAULT_RINCIAN_BIAYA, formatRupiah } from '@/lib/storage';
 
@@ -9,7 +9,11 @@ import { DEFAULT_RINCIAN_BIAYA, formatRupiah } from '@/lib/storage';
 // ada seksi biaya khusus — rincian lengkap hanya muncul setelah login).
 // Data dari CMS yang sama dengan Informasi Pendaftaran (Pengaturan →
 // Rincian Biaya), jadi angka di beranda dan di dashboard wali selalu sama.
+// (13 Nov, keputusan Rahmat: seksi DIRINGKAS — hanya total yang tampil,
+// rincian 3 kartu dibuka lewat tombol, supaya beranda tetap rapi namun
+// transparan.)
 export const LandingBiaya: React.FC<{ settings: SchoolSettings }> = ({ settings }) => {
+  const [expanded, setExpanded] = useState(false);
   const rincian = settings.rincianBiayaPendaftaran || DEFAULT_RINCIAN_BIAYA;
   const sum = (items: FeeItem[]) => (items || []).reduce((a, it) => a + (Number(it.biaya) || 0), 0);
   const admin = sum(rincian.itemsAdministrasi);
@@ -39,32 +43,8 @@ export const LandingBiaya: React.FC<{ settings: SchoolSettings }> = ({ settings 
           <div className="h-1.5 w-16 mx-auto mt-4.5 rounded-full" style={{ background: '#B45309' }} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {groups.map((g) => (
-            <div key={g.title} className="bg-white rounded-xl border border-[#E7E5E4] shadow-xs overflow-hidden flex flex-col">
-              <div className={`${g.accent} px-5 py-3.5`}>
-                <h3 className="text-sm font-extrabold text-white font-heading">{g.title}</h3>
-              </div>
-              <ul className="flex-1 px-5 py-4 space-y-2.5 text-sm">
-                {g.items.map((it) => (
-                  <li key={it.id} className="flex items-start justify-between gap-3">
-                    <span className="flex items-start gap-2 text-[#1C1917]">
-                      <Check className="w-4 h-4 text-[#065F46] shrink-0 mt-0.5" />
-                      <span>{it.nama}</span>
-                    </span>
-                    <span className="font-mono font-bold text-[#1C1917] whitespace-nowrap">{formatRupiah(it.biaya)}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="px-5 py-3.5 border-t border-[#E7E5E4] bg-[#F8FAF8] flex items-center justify-between">
-                <span className="text-xs font-bold text-[#626862] uppercase tracking-wider">Subtotal</span>
-                <span className="font-mono font-black text-[#065F46]">{formatRupiah(g.total)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-5 bg-white rounded-xl border border-[#E7E5E4] shadow-xs px-5 py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-8 text-center">
+        {/* Total selalu tampil; rincian dibuka lewat tombol. */}
+        <div className="bg-white rounded-xl border border-[#E7E5E4] shadow-xs px-5 py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-8 text-center">
           <p className="text-sm text-[#1C1917]">
             <span className="font-bold">Total Putra:</span>{' '}
             <span className="font-mono font-black text-[#065F46]">{formatRupiah(admin + putra)}</span>
@@ -77,20 +57,61 @@ export const LandingBiaya: React.FC<{ settings: SchoolSettings }> = ({ settings 
           </p>
         </div>
 
-        {rincian.catatanAdministrasi && (
-          <p className="mt-4 text-center text-xs text-[#78716C] leading-relaxed">
-            {rincian.catatanAdministrasi.replaceAll('{biayaPendaftaran}', admin.toLocaleString('id-ID'))}
-          </p>
-        )}
-        {(rincian.ketentuanPembayaran || []).length > 0 && (
-          <ul className="mt-3 max-w-2xl mx-auto space-y-1 text-xs text-[#78716C]">
-            {(rincian.ketentuanPembayaran || []).map((k, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <Check className="w-3.5 h-3.5 text-[#065F46] shrink-0 mt-0.5" />
-                <span>{k}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#065F46] text-white text-sm font-bold hover:bg-[#054d39] cursor-pointer shadow-xs"
+          >
+            {expanded ? 'Sembunyikan rincian biaya' : 'Lihat rincian biaya'}
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {expanded && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
+              {groups.map((g) => (
+                <div key={g.title} className="bg-white rounded-xl border border-[#E7E5E4] shadow-xs overflow-hidden flex flex-col">
+                  <div className={`${g.accent} px-5 py-3.5`}>
+                    <h3 className="text-sm font-extrabold text-white font-heading">{g.title}</h3>
+                  </div>
+                  <ul className="flex-1 px-5 py-4 space-y-2.5 text-sm">
+                    {g.items.map((it) => (
+                      <li key={it.id} className="flex items-start justify-between gap-3">
+                        <span className="flex items-start gap-2 text-[#1C1917]">
+                          <Check className="w-4 h-4 text-[#065F46] shrink-0 mt-0.5" />
+                          <span>{it.nama}</span>
+                        </span>
+                        <span className="font-mono font-bold text-[#1C1917] whitespace-nowrap">{formatRupiah(it.biaya)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="px-5 py-3.5 border-t border-[#E7E5E4] bg-[#F8FAF8] flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#626862] uppercase tracking-wider">Subtotal</span>
+                    <span className="font-mono font-black text-[#065F46]">{formatRupiah(g.total)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {rincian.catatanAdministrasi && (
+              <p className="mt-4 text-center text-xs text-[#78716C] leading-relaxed">
+                {rincian.catatanAdministrasi.replaceAll('{biayaPendaftaran}', admin.toLocaleString('id-ID'))}
+              </p>
+            )}
+            {(rincian.ketentuanPembayaran || []).length > 0 && (
+              <ul className="mt-3 max-w-2xl mx-auto space-y-1 text-xs text-[#78716C]">
+                {(rincian.ketentuanPembayaran || []).map((k, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <Check className="w-3.5 h-3.5 text-[#065F46] shrink-0 mt-0.5" />
+                    <span>{k}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </section>

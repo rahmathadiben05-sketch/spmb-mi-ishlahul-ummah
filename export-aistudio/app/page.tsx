@@ -1085,11 +1085,11 @@ export default function HomePage() {
                 Merdeka berchip terang karena teks biru tuanya tidak
                 terbaca di atas hijau tua. */}
             <div className="motif-band relative overflow-hidden" ref={logoBandRef}>
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex flex-wrap items-center justify-center gap-3 sm:gap-6">
                 <img
                   src="/lp-maarif-nu.png"
                   alt="LP Ma'arif NU"
-                  className={`h-16 sm:h-20 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                  className={`h-11 sm:h-14 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '0ms' }}
                   width={200}
                   height={148}
@@ -1097,7 +1097,7 @@ export default function HomePage() {
                 <img
                   src="/kemenag.png"
                   alt="Kementerian Agama — Ikhlas Beramal"
-                  className={`h-20 sm:h-24 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                  className={`h-14 sm:h-16 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '80ms' }}
                   width={396}
                   height={381}
@@ -1105,7 +1105,7 @@ export default function HomePage() {
                 <img
                   src="/madrasah-hebat.png"
                   alt="Madrasah Hebat Bermartabat"
-                  className={`h-20 sm:h-28 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                  className={`h-14 sm:h-18 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '160ms' }}
                   width={448}
                   height={294}
@@ -1113,7 +1113,7 @@ export default function HomePage() {
                 <img
                   src="/motto-b3.png"
                   alt="Motto MI Ishlahul Ummah — Berilmu, Berakhlak, Berprestasi"
-                  className={`h-24 sm:h-32 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                  className={`h-16 sm:h-20 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '240ms' }}
                   width={921}
                   height={457}
@@ -1122,11 +1122,11 @@ export default function HomePage() {
                   className={`flex flex-col items-center gap-1 logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '320ms' }}
                 >
-                  <span className="bg-[#F7F4EC] rounded-lg px-2 py-1.5 flex items-center justify-center">
+                  <span className="bg-[#F7F4EC] rounded-lg px-1.5 py-1 flex items-center justify-center">
                     <img
                       src="/kurikulum-merdeka.png"
                       alt="Kurikulum Merdeka"
-                      className="h-14 sm:h-16 w-auto"
+                      className="h-10 sm:h-12 w-auto"
                       width={238}
                       height={230}
                     />
