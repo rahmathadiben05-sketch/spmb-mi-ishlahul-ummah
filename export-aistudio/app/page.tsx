@@ -1082,9 +1082,11 @@ export default function HomePage() {
             {/* Pita logo — 6 logo sejajar di tengah: LP Ma'arif NU,
                 Kemenag, Madrasah Hebat Bermartabat, motto B3, Kurikulum
                 Merdeka, Kurikulum Berbasis Cinta. Kedua logo kurikulum
-                berchip terang karena latar putih / teks gelapnya tidak
-                terbaca di atas hijau tua. Caption 'Integrasi KBC'
-                dihapus atas permintaan Rahmat 13 Nov. */}
+                bertransparan (latar putih dihapus, 13 Nov) supaya menyatu
+                dengan pita hijau tua — tanpa chip. Catatan: teks biru tua
+                logo Kurikulum Merdeka jadi kurang kontras di atas hijau
+                tua; bila Rahmat menilai tidak terbaca, kembalikan chip
+                untuk logo itu saja. */}
             <div className="motif-band relative overflow-hidden" ref={logoBandRef}>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex flex-wrap items-center justify-center gap-3 sm:gap-6">
                 <img
@@ -1119,34 +1121,22 @@ export default function HomePage() {
                   width={921}
                   height={457}
                 />
-                <span
-                  className={`logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                <img
+                  src="/kurikulum-merdeka.png"
+                  alt="Kurikulum Merdeka"
+                  className={`h-10 sm:h-12 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '320ms' }}
-                >
-                  <span className="bg-[#F7F4EC] rounded-lg px-1.5 py-1 flex items-center justify-center">
-                    <img
-                      src="/kurikulum-merdeka.png"
-                      alt="Kurikulum Merdeka"
-                      className="h-10 sm:h-12 w-auto"
-                      width={238}
-                      height={230}
-                    />
-                  </span>
-                </span>
-                <span
-                  className={`logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
+                  width={238}
+                  height={230}
+                />
+                <img
+                  src="/kurikulum-berbasis-cinta.png"
+                  alt="Kurikulum Berbasis Cinta"
+                  className={`h-10 sm:h-12 w-auto logo-band-item${logoBandInView ? ' logo-band-item--in' : ''}`}
                   style={{ animationDelay: '400ms' }}
-                >
-                  <span className="bg-[#F7F4EC] rounded-lg px-1.5 py-1 flex items-center justify-center">
-                    <img
-                      src="/kurikulum-berbasis-cinta.png"
-                      alt="Kurikulum Berbasis Cinta"
-                      className="h-10 sm:h-12 w-auto"
-                      width={1024}
-                      height={1024}
-                    />
-                  </span>
-                </span>
+                  width={1024}
+                  height={1024}
+                />
               </div>
             </div>
 
