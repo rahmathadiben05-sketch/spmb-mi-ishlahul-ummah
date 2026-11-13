@@ -306,7 +306,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         // Normalisasi tampilan: baris lama 'Gelombang 1 (Early Bird)' tampil
         // sebagai 'TA 2027/2028'. Hanya pemetaan ke tampilan — Sheets tidak ditulis ulang.
         const displayData = res.data.map((r) => ({ ...r, wave: normalizeWaveName(r.wave) }));
-        setRegistrationsList(displayData);
+        // (v2.13) Server TIDAK PERNAH mengembalikan PIN (L5) — tapi operator
+        // baru saja me-reset PIN suatu akun; PIN baru itu hanya ada di daftar
+        // lokal (state). Bila refresh server menimpa daftar tanpa
+        // mempertahankan PIN lokal, PIN yang baru di-reset hilang dari
+        // tampilan padahal server sudah menyimpannya (temuan E2E 13 Nov
+        // 12:29: reset pertama "tidak menempel"). Pertahankan PIN lokal
+        // yang diketahui per record di STATE tampil saja; cache
+        // localStorage di bawah tetap TANPA PIN (L3). Urutan: PIN dari
+        // data segar MENANG (bila ada) — PIN lama di state hanya fallback
+        // bila data segar kosong (temuan verifikasi ulang 12:42: aturan
+        // sebaliknya membekukan tampilan di PIN pertama, reset berikut
+        // tidak pernah tampil walau server sudah menyimpan PIN baru).
+        setRegistrationsList((prev) =>
+          displayData.map((r) => {
+            const local = prev.find((l) => l.id === r.id || l.nomorPendaftaran === r.nomorPendaftaran);
+            return { ...r, pin: r.pin || local?.pin || '' };
+          })
+        );
         // Cache ke localStorage supaya fallback offline tetap segar dan
         // refreshData() lokal sesudah aksi admin tetap menampilkan data server.
         // (v2.11, L3) Salinan cache TANPA PIN — aksi admin memakai token,
@@ -560,7 +577,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setSettings(currentSettings);
     setSettingsForm(currentSettings);
     setTokensList(getTokens());
-    setRegistrationsList(getRegistrations());
+    // (v2.13) Sama seperti refresh server di atas: jangan hapus PIN yang
+    // diketahui dari state tampil hanya karena cache lokal tidak
+    // menyimpannya (cache memang sengaja tanpa PIN, L3). Urutan: PIN dari
+    // data segar MENANG (mis. PIN baru yang baru ditulis reset) — PIN lama
+    // di state hanya fallback bila data segar kosong.
+    setRegistrationsList((prev) => {
+      const fresh = getRegistrations();
+      return fresh.map((r) => {
+        const known = prev.find((l) => l.id === r.id || l.nomorPendaftaran === r.nomorPendaftaran);
+        return { ...r, pin: r.pin || known?.pin || '' };
+      });
+    });
     setAuditLogsList(getAuditLogs());
     setWebhookLogsList(getWebhookLogs());
     setAcademicYearsList(getAcademicYears());
@@ -1039,7 +1067,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       alert('Gagal mengubah PIN di server: ' + (res.error || 'tidak dapat terhubung ke server.') + ' PIN TIDAK berubah.');
       return;
     }
-    updateRegistration(
+    const updated = updateRegistration(
       recordId,
       (prev) => ({
         ...prev,
@@ -1049,18 +1077,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'Operator SPMB',
       currentRole
     );
+    if (!updated) {
+      // Fallback: cache lokal belum berisi baris server untuk nomor ini
+      // (mis. daftar admin dimuat dari cache saat server tidak terjangkau,
+      // sehingga id lokal masih 'reg-...') — cari lewat nomor pendaftaran.
+      const byNomor = getRegistrations().find((r) => r.nomorPendaftaran === target.nomorPendaftaran);
+      if (byNomor) {
+        updateRegistration(
+          byNomor.id,
+          (prev) => ({
+            ...prev,
+            pin: newPin,
+            tokenCode: newPin,
+          }),
+          'Operator SPMB',
+          currentRole
+        );
+      }
+    }
     alert('PIN akses berhasil diubah dan tersimpan di server.');
     refreshData();
   };
 
   const handleCopyPin = (reg: RegistrationRecord) => {
-    const pin = reg.pin || '—';
-    navigator.clipboard.writeText(pin);
+    // PIN tidak diketahui (disembunyikan dari daftar admin demi keamanan,
+    // L5): jangan salin '—' ke clipboard.
+    if (!reg.pin) return;
+    navigator.clipboard.writeText(reg.pin);
     setCopiedPinId(reg.id);
     setTimeout(() => setCopiedPinId(null), 2000);
   };
 
   const handleSendWaAccountCredentials = (reg: RegistrationRecord) => {
+    // PIN tidak diketahui (disembunyikan dari daftar admin demi keamanan,
+    // L5): jangan kirim pesan WA berisi PIN '—'. Arahkan operator ke
+    // reset PIN — setelah PIN baru disimpan, tabel menampilkan PIN baru
+    // dan Kirim WA bisa dipakai.
+    if (!reg.pin) {
+      setEditingPinRecord(reg);
+      return;
+    }
     const phone = reg.parent?.ayah?.noHp || reg.parent?.ibu?.noHp || reg.parent?.wali?.noHp;
     if (!phone) {
       alert('Nomor WhatsApp wali murid belum terisi di pendaftaran ini!');
@@ -1571,6 +1627,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* Pendaftar Terbaru — mengisi area kosong di bawah Aksi Cepat
+                (temuan tinjauan 13 Nov) sekaligus memberi jalan pintas ke
+                detail pendaftar. */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-900">Pendaftar Terbaru</h3>
+                  <button onClick={() => setActiveTab('registrations')} className="text-xs font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer">
+                    Lihat semua →
+                  </button>
+                </div>
+                {registrationsList.length === 0 ? (
+                  <p className="text-xs text-slate-400">Belum ada pendaftar.</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100 text-xs">
+                    {[...registrationsList]
+                      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+                      .slice(0, 5)
+                      .map((reg) => (
+                        <li key={reg.id}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDetailReg(reg)}
+                            className="w-full flex items-center justify-between gap-3 py-2.5 text-left hover:bg-slate-50 rounded-lg px-2 -mx-2 cursor-pointer"
+                          >
+                            <span>
+                              <span className="block font-bold text-slate-900">{reg.student.namaLengkap}</span>
+                              <span className="block text-[11px] text-slate-500 font-mono">{reg.nomorPendaftaran}</span>
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${reg.status === 'terverifikasi' ? 'bg-emerald-100 text-emerald-800' : reg.status === 'ditolak' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>
+                              {reg.status.toUpperCase()}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
 
@@ -1688,8 +1782,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleCopyPin(reg)}
-                                  className="p-1 rounded hover:bg-slate-200 text-slate-500 cursor-pointer"
-                                  title="Salin PIN"
+                                  disabled={!reg.pin}
+                                  className="p-1 rounded hover:bg-slate-200 text-slate-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                  title={reg.pin ? 'Salin PIN' : 'PIN tidak diketahui — reset PIN dulu'}
                                 >
                                   {isCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                                 </button>
@@ -1803,7 +1898,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Sisa kuota diskon: {indenStats ? `${indenStats.sisaKuotaDiskon} dari ${(() => {
                     const w = wavesList.find((x) => x.nama === settings.activeWave) || wavesList.find((x) => x.isAktif);
                     return w?.kuotaDiskon ?? 20;
-                  })()} kursi` : '-'}
+                  })()} kursi` : 'memuat…'}
                 </span>
               </div>
 
@@ -3446,6 +3541,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <h3 className="text-base font-bold text-slate-900">Checklist Verifikasi: {selectedReg.student.namaLengkap}</h3>
+            {/* Pratinjau dokumen — verifikasi tidak boleh buta (temuan
+              tinjauan 13 Nov): buka berkas asli dari Drive sebelum
+              mencentang. Tautan ada bila dokumen berhasil diunggah. */}
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs space-y-1.5">
+              <p className="font-bold text-slate-700">Dokumen terunggah — periksa sebelum mencentang:</p>
+              <div className="flex flex-wrap gap-2">
+                {selectedReg.documents?.kk?.url ? (
+                  <a href={selectedReg.documents.kk.url} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-emerald-800 hover:bg-emerald-50 cursor-pointer">Lihat KK ↗</a>
+                ) : (
+                  <span className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400">KK: belum ada</span>
+                )}
+                {selectedReg.documents?.akta?.url ? (
+                  <a href={selectedReg.documents.akta.url} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-emerald-800 hover:bg-emerald-50 cursor-pointer">Lihat Akta ↗</a>
+                ) : (
+                  <span className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400">Akta: belum ada</span>
+                )}
+                {selectedReg.documents?.ijazahTk?.url && (
+                  <a href={selectedReg.documents.ijazahTk.url} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-emerald-800 hover:bg-emerald-50 cursor-pointer">Lihat Ijazah TK ↗</a>
+                )}
+                {selectedReg.documents?.foto?.url && (
+                  <a href={selectedReg.documents.foto.url} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-emerald-800 hover:bg-emerald-50 cursor-pointer">Lihat Foto ↗</a>
+                )}
+              </div>
+            </div>
             <div className="space-y-2 text-xs">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -3502,11 +3621,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="grid grid-cols-2 gap-3 text-xs">
               <p><strong>NIK:</strong> {selectedDetailReg.student.nik}</p>
               <p><strong>No. KK:</strong> {selectedDetailReg.student.noKk}</p>
-              <p><strong>PIN Akses:</strong> <span className="font-mono font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{selectedDetailReg.pin || '—'}</span></p>
+              <p><strong>PIN Akses:</strong> <span className="font-mono font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{selectedDetailReg.pin || '—'}</span>
+                <button
+                  type="button"
+                  onClick={() => setEditingPinRecord(selectedDetailReg)}
+                  className="ml-2 px-2 py-0.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[11px] cursor-pointer"
+                  title="Buat PIN baru untuk akun ini (PIN lama tidak ditampilkan demi keamanan)"
+                >
+                  Reset PIN
+                </button>
+              </p>
               <p><strong>Jalur:</strong> {selectedDetailReg.jenisPendaftaran}</p>
               <p><strong>Orang Tua:</strong> {selectedDetailReg.parent.ayah.namaLengkap || selectedDetailReg.parent.ibu.namaLengkap}</p>
               <p><strong>No. WA:</strong> {selectedDetailReg.parent.ayah.noHp || '-'}</p>
               <p className="col-span-2"><strong>Alamat:</strong> {selectedDetailReg.address.alamatLengkap}, {selectedDetailReg.address.kelurahan}, {selectedDetailReg.address.kecamatan}</p>
+              <p className="col-span-2"><strong>Dokumen:</strong>{' '}
+                {selectedDetailReg.documents?.kk?.url ? (<a href={selectedDetailReg.documents.kk.url} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-bold underline">Lihat KK ↗</a>) : (<span className="text-slate-400">KK: belum ada</span>)}{' • '}
+                {selectedDetailReg.documents?.akta?.url ? (<a href={selectedDetailReg.documents.akta.url} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-bold underline">Lihat Akta ↗</a>) : (<span className="text-slate-400">Akta: belum ada</span>)}
+                {selectedDetailReg.documents?.foto?.url && (<>{' • '}<a href={selectedDetailReg.documents.foto.url} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-bold underline">Lihat Foto ↗</a></>)}
+                {selectedDetailReg.documents?.ijazahTk?.url && (<>{' • '}<a href={selectedDetailReg.documents.ijazahTk.url} target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-bold underline">Lihat Ijazah TK ↗</a></>)}
+              </p>
             </div>
             <div className="pt-4 flex justify-between items-center border-t">
               <button

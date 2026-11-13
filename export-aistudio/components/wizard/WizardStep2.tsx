@@ -357,7 +357,7 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">No. WhatsApp / HP Ayah <span className="text-[#626862] font-normal">(Opsional)</span></label>
+            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">No. WhatsApp / HP Ayah <span className="text-[#626862] font-normal">(wajib salah satu dari Ayah/Ibu)</span></label>
             <input
               type="text"
               value={data.ayah?.noHp || ''}
@@ -528,7 +528,7 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">No. WhatsApp / HP Ibu <span className="text-[#626862] font-normal">(Opsional)</span></label>
+            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">No. WhatsApp / HP Ibu <span className="text-[#626862] font-normal">(wajib salah satu dari Ayah/Ibu)</span></label>
             <input
               type="text"
               value={data.ibu?.noHp || ''}

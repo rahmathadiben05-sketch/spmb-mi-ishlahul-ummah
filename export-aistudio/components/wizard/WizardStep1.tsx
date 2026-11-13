@@ -11,6 +11,11 @@ interface WizardStep1Props {
   onChange: (data: StudentData) => void;
   onNext: () => void;
   settings?: SchoolSettings;
+  // Mode edit (Lihat/Edit Formulir dari dashboard wali): id record yang
+  // sedang diedit, supaya cek duplikat mengabaikan NIK/NISN milik sendiri.
+  // Tanpa ini, wali yang membuka formulirnya sendiri langsung diblokir
+  // banner "NIK sudah pernah terdaftar" (temuan tinjauan 13 Nov).
+  excludeRegId?: string;
 }
 
 // Opsi selaras EMIS 4.0 — Tab DATA SISWA (area 5, 2026-11-10)
@@ -45,6 +50,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
   onChange,
   onNext,
   settings,
+  excludeRegId,
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dupWarning, setDupWarning] = useState<string | null>(null);
@@ -159,9 +165,10 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
       if (!data.alasanPindah?.trim()) errs.alasanPindah = 'Alasan Pindah wajib diisi.';
     }
 
-    // Final duplication check
+    // Final duplication check — kecualikan record yang sedang diedit
+    // (mode edit wali), supaya NIK/NISN sendiri tidak dianggap duplikat.
     if (cleanNik.length === 16 && cleanKk.length === 16) {
-      const res = checkDuplication(cleanNik, cleanKk, data.nisn);
+      const res = checkDuplication(cleanNik, cleanKk, data.nisn, excludeRegId);
       if (res.isDuplicate) {
         errs.duplication = res.message || 'Data sudah pernah terdaftar.';
       }

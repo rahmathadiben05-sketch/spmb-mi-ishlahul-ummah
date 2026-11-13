@@ -44,6 +44,7 @@ import { LandingFeatures } from '@/components/landing/LandingFeatures';
 import { RegistrationTimeline } from '@/components/landing/RegistrationTimeline';
 import { LandingDownloads } from '@/components/landing/LandingDownloads';
 import { LandingFaq } from '@/components/landing/LandingFaq';
+import { LandingBiaya } from '@/components/landing/LandingBiaya';
 import { LandingGallery } from '@/components/landing/LandingGallery';
 import { LandingTestimonials } from '@/components/landing/LandingTestimonials';
 import { ApplicantAccessCard } from '@/components/auth/ApplicantAccessCard';
@@ -70,24 +71,10 @@ type ViewMode = 'landing' | 'applicant_access' | 'applicant_dashboard' | 'inform
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>('landing');
 
-  // Pita logo: animasi masuk (stagger) saat pita terlihat — sekali saja
+  // Pita logo: animasi masuk (stagger) saat pita terlihat — sekali saja.
+  // (Dipindah ke bawah, setelah deklarasi settingsReady — lihat di sana.)
   const logoBandRef = useRef<HTMLDivElement>(null);
   const [logoBandInView, setLogoBandInView] = useState(false);
-  useEffect(() => {
-    const el = logoBandRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setLogoBandInView(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.2 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
   const [currentRole, setRoleState] = useState<UserRole>('public');
   const [settings, setSettings] = useState<SchoolSettings>(DEFAULT_SETTINGS);
   // Titik peta: link Google Maps / koordinat dari Profil Madrasah; kosong = cari teks alamat
@@ -141,6 +128,12 @@ export default function HomePage() {
   // Mode pendaftaran + data inden (bila wali memilih Inden Kursi Gelombang 1).
   const [activeModePendaftaran, setActiveModePendaftaran] = useState<'penuh' | 'inden'>('penuh');
   const [activeInden, setActiveInden] = useState<RegistrationRecord['inden']>(undefined);
+  // Mode edit (v2.13): true bila wizard dibuka dari dashboard wali lewat
+  // "Lihat / Edit Formulir" untuk record yang SUDAH tersubmit. Submit edit
+  // HARUS memakai updateRegistration (baris sudah ada di Sheets), bukan
+  // createRegistration baru — kalau tidak, server menolak sebagai duplikat
+  // NIK (temuan E2E 13 Nov 12:29).
+  const [isEditingSubmitted, setIsEditingSubmitted] = useState(false);
   // No WA Pendaftaran (v2.12): nomor WA dari kartu akses — disimpan
   // terpisah karena Langkah 2 boleh mengubah nomor ayah/ibu/wali.
   const [activeAccessWa, setActiveAccessWa] = useState<string>('');
@@ -149,6 +142,30 @@ export default function HomePage() {
   // pengaturan lokal diterapkan, supaya tidak sempat berkedip dengan
   // konten default saat (re)load.
   const [settingsReady, setSettingsReady] = useState(false);
+  // Observer pita logo: HARUS depend on settingsReady. Gate anti-flicker
+  // (v2.12) membuat komponen early-return layar muat sebelum pengaturan
+  // diterapkan — saat efek [] pertama jalan, pita belum ada di DOM
+  // (logoBandRef.current null) sehingga observer tidak pernah terpasang dan
+  // 5 logo selamanya opacity 0 (regresi terkonfirmasi 13 Nov 12:03).
+  // Dengan deps [settingsReady], observer dipasang begitu konten asli
+  // dirender; bila pita sudah terlihat saat itu, IntersectionObserver
+  // langsung melaporkan intersecting.
+  useEffect(() => {
+    if (!settingsReady) return;
+    const el = logoBandRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setLogoBandInView(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [settingsReady]);
   // Menandai restore awal selesai — simpan viewMode ke sessionStorage hanya
   // setelah restore, supaya nilai 'landing' awal tidak menimpa simpanan.
   const [viewRestored, setViewRestored] = useState(false);
@@ -381,6 +398,7 @@ export default function HomePage() {
     setActiveAccessWa('');
     setActiveModePendaftaran('penuh');
     setActiveInden(undefined);
+    setIsEditingSubmitted(false);
     setCurrentStep(1);
     setLastSavedAt(null);
     clearDraft();
@@ -470,6 +488,8 @@ export default function HomePage() {
   }) => {
     // Daftar baru, bukan login: batalkan permintaan buka pelacak yang tertunda.
     setPendingOpenTracker(false);
+    // Daftar baru — BUKAN edit record tersubmit.
+    setIsEditingSubmitted(false);
     setJenisPendaftaran(data.regType);
     setActiveTempRegNo(data.tempRegNo);
     setActiveTempPin(data.tempPin);
@@ -735,6 +755,84 @@ export default function HomePage() {
           'Data tersimpan di perangkat ini, tetapi GAGAL terkirim ke Google Sheets karena jaringan: ' +
             sync.message +
             ' Nomor di bawah ini masih SEMENTARA — belum terkonfirmasi panitia. Tekan "Kirim Ulang ke Panitia" untuk mencoba lagi.'
+        );
+        resetRegistrationForm();
+        setViewMode('success');
+      }
+      return;
+    }
+
+    // ---- ALUR EDIT (v2.13): wali mengubah formulir yang SUDAH tersubmit
+    // (wizard dibuka dari dashboard lewat "Lihat / Edit Formulir").
+    // Baris sudah ada di Sheets → submit memakai updateRegistration,
+    // BUKAN createRegistration baru. Tanpa cabang ini, submit edit selalu
+    // membuat nomor sementara baru lalu ditolak server sebagai duplikat
+    // NIK (temuan E2E 13 Nov 12:29). Status & hasil pengumuman
+    // DIPERTAHANKAN — edit data tidak mereset status verifikasi.
+    if (isEditingSubmitted && userRecord && userRecord.status !== 'draft') {
+      const localRecord =
+        getRegistrations().find((r) => r.id === userRecord.id) ||
+        getRegistrations().find((r) => r.nomorPendaftaran === userRecord.nomorPendaftaran);
+      if (!localRecord) {
+        setIsSubmitting(false);
+        setSubmitError(
+          'Data pendaftaran tidak ditemukan di perangkat ini. Silakan masuk kembali dengan No. WA + PIN Anda, lalu coba edit lagi.'
+        );
+        return;
+      }
+      const fullRecord: RegistrationRecord = {
+        ...localRecord,
+        nomorPendaftaran: userRecord.nomorPendaftaran,
+        tokenCode: activeTempPin || localRecord.tokenCode,
+        pin: activeTempPin || localRecord.pin,
+        noWaPendaftaran: activeAccessWa || localRecord.noWaPendaftaran,
+        status: localRecord.status,
+        academicYear: localRecord.academicYear || settings.activeAcademicYear,
+        wave: localRecord.wave || settings.activeWave,
+        student: studentData,
+        parent: parentData,
+        address: addressData,
+        documents: documentsData,
+        hasilPengumuman: localRecord.hasilPengumuman ?? 'PENDING',
+        modePendaftaran: localRecord.modePendaftaran || 'penuh',
+        ...(localRecord.inden ? { inden: localRecord.inden } : {}),
+      };
+      let updatedLocal: RegistrationRecord | null = null;
+      try {
+        updatedLocal = updateRegistration(localRecord.id, () => fullRecord, 'Wali Murid', 'public');
+      } catch (err: any) {
+        setIsSubmitting(false);
+        setSubmitError(
+          err?.message || 'Gagal menyimpan perubahan di perangkat ini. Coba kirim lagi.'
+        );
+        return;
+      }
+      if (!updatedLocal) {
+        setIsSubmitting(false);
+        setSubmitError('Data pendaftaran tidak ditemukan di perangkat ini. Coba kirim lagi.');
+        return;
+      }
+      const sync = await syncRegistrationUpdateToWebhook(updatedLocal, settings);
+      if (sync.success) {
+        setIsSubmitting(false);
+        setCreatedRecord(updatedLocal);
+        setUserRecord(updatedLocal);
+        resetRegistrationForm();
+        setViewMode('success');
+        return;
+      }
+      enqueueFailedSync(updatedLocal);
+      setIsSubmitting(false);
+      setCreatedRecord(updatedLocal);
+      setUserRecord(updatedLocal);
+      if (sync.kind === 'server') {
+        setSubmitFailure({ message: sync.message, kind: 'server', record: updatedLocal });
+        setViewMode('submit_failed');
+      } else {
+        setSyncWarning(
+          'Perubahan tersimpan di perangkat ini, tetapi GAGAL terkirim ke Google Sheets karena jaringan: ' +
+            sync.message +
+            ' Tekan "Kirim Ulang ke Panitia" untuk mencoba lagi.'
         );
         resetRegistrationForm();
         setViewMode('success');
@@ -1072,6 +1170,9 @@ export default function HomePage() {
               onOpenStatusCheck={handleOpenStatusTracker}
             />
 
+            {/* 5b. Rincian Biaya (temuan tinjauan 13 Nov) */}
+            <LandingBiaya settings={settings} />
+
             {/* 6. Hubungi Kami & Sekretariat */}
             {settings.sectionVisibility?.showSekretariat !== false && (
             <section
@@ -1104,8 +1205,8 @@ export default function HomePage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                  <div className="lg:col-span-5 bg-[#F7F4EC] rounded-xl p-6 sm:p-8 border border-[#E7E5E4] shadow-xs flex flex-col justify-between space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  <div className="lg:col-span-5 bg-[#F7F4EC] rounded-xl p-6 sm:p-8 border border-[#E7E5E4] shadow-xs flex flex-col space-y-6">
                     <div className="space-y-5 text-sm">
                       <div className="flex items-start gap-4">
                         <span className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-[#EEFAF4] text-[#065F46]">
@@ -1270,7 +1371,12 @@ export default function HomePage() {
             record={userRecord}
             settings={settings}
             onOpenInformasiPendaftaran={() => setViewMode('informasi_pendaftaran')}
-            onOpenWizard={() => setViewMode('wizard')}
+            onOpenWizard={() => {
+              // "Lihat / Edit Formulir" dari dashboard: tandai mode edit
+              // supaya submit memakai jalur update, bukan pendaftaran baru.
+              setIsEditingSubmitted(true);
+              setViewMode('wizard');
+            }}
             onOpenStatusTracker={handleOpenStatusTracker}
             onPrintBukti={() => {
               if (userRecord) {
@@ -1352,6 +1458,7 @@ export default function HomePage() {
                 onChange={setStudentData}
                 onNext={handleNextStep}
                 settings={settings}
+                excludeRegId={userRecord?.id}
               />
             )}
             {currentStep === 2 && (

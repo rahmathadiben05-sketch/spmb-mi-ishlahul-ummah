@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   XCircle,
@@ -57,21 +57,12 @@ export const StatusTrackerModal: React.FC<StatusTrackerModalProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [staleNotice, setStaleNotice] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
-  // Pelacak hanya menampilkan data bila ada sesi wali yang valid (login No HP + PIN).
-  const session = getWaliMuridSession();
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-
-    const clean = query.trim().toUpperCase();
-    const cleanNumbers = query.replace(/\D/g, '');
+  // Inti pencarian status (server-first, kredensial sesi) — dipakai oleh
+  // form manual DAN pemuatan otomatis di bawah.
+  const runTrackerLookup = async (rawQuery: string) => {
+    const clean = rawQuery.trim().toUpperCase();
+    const cleanNumbers = rawQuery.replace(/\D/g, '');
     setStaleNotice(null);
-
-    // Server-first dengan kredensial sesi (tanpa sesi, gate di bawah sudah
-    // menahan — handler ini tidak pernah mencapai pencarian cache lokal).
     const sess = getWaliMuridSession();
     if (!sess) {
       setResults([]);
@@ -87,8 +78,6 @@ export const StatusTrackerModal: React.FC<StatusTrackerModalProps> = ({
         pin: sess.pin,
       });
       if (!res.ok) {
-        // Server tak terjangkau / PIN tidak cocok: JUJUR — tidak ada hasil
-        // yang ditampilkan, dan cache lokal TIDAK disajikan sebagai resmi.
         setResults([]);
         setResult(null);
         setSearched(true);
@@ -96,7 +85,6 @@ export const StatusTrackerModal: React.FC<StatusTrackerModalProps> = ({
         return;
       }
       const serverRecord = cacheServerRegistration(res.data);
-      // Batasi ke record milik sesi: nomor pendaftaran HARUS sama dengan sesi.
       if (serverRecord.nomorPendaftaran.toUpperCase() !== sess.nomorPendaftaran.toUpperCase()) {
         setResults([]);
         setResult(null);
@@ -129,6 +117,34 @@ export const StatusTrackerModal: React.FC<StatusTrackerModalProps> = ({
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  // Muat otomatis untuk wali yang sudah login: pelacak langsung menampilkan
+  // status record milik sesi tanpa meminta wali mengetik nomor/WA lagi
+  // (temuan tinjauan 13 Nov). Form pencarian tetap tersedia untuk cari ulang.
+  const autoLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!isOpen) {
+      autoLoadedRef.current = false;
+      return;
+    }
+    const sess = getWaliMuridSession();
+    if (!sess || autoLoadedRef.current) return;
+    autoLoadedRef.current = true;
+    setQuery(sess.nomorPendaftaran);
+    void runTrackerLookup(sess.nomorPendaftaran);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  // Pelacak hanya menampilkan data bila ada sesi wali yang valid (login No HP + PIN).
+  const session = getWaliMuridSession();
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    await runTrackerLookup(query);
   };
 
   // Determine stage (1 to 5)

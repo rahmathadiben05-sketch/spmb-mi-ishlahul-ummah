@@ -116,7 +116,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                 </div>
                 <div style="text-align:right;">
                   <div class="reg-label">PIN 6 Digit</div>
-                  <div class="token-val">${record.tokenCode}</div>
+                  <div class="token-val">${record.pin || record.tokenCode || '—'}</div>
                 </div>
               </div>
               <div class="grid">
@@ -266,7 +266,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
             </div>
             <div className="text-center sm:text-right">
               <p className="text-[10px] uppercase font-bold text-[#626862]">PIN 6 Digit</p>
-              <p className="text-xs sm:text-sm font-mono font-bold text-[#1A1D1A]">{record.tokenCode}</p>
+              <p className="text-xs sm:text-sm font-mono font-bold text-[#1A1D1A]">{record.pin || record.tokenCode || '—'}</p>
             </div>
           </div>
 

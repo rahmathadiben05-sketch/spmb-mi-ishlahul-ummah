@@ -127,6 +127,14 @@ export const WizardStep4: React.FC<WizardStep4Props> = ({
           uploadedAt: new Date().toISOString(),
         };
         onChange({ ...dataRef.current, [docKey]: newFile });
+        // Hapus error validasi berkas ini begitu berhasil diunggah — jangan
+        // biarkan pesan merah lama tertinggal sampai klik Tinjau berikutnya
+        // (temuan tinjauan 13 Nov).
+        setErrors((prev) => {
+          const next = { ...prev };
+          delete next[docKey];
+          return next;
+        });
         setUploadProgress((prev) => ({ ...prev, [docKey]: 0 }));
       }, 200);
     } catch (err) {
@@ -329,7 +337,14 @@ export const WizardStep4: React.FC<WizardStep4Props> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <button
             type="button"
-            onClick={() => onChange({ ...data, memilikiIjazahTk: true })}
+            onClick={() => {
+              onChange({ ...data, memilikiIjazahTk: true });
+              setErrors((prev) => {
+                const next = { ...prev };
+                delete next.memilikiIjazahTk;
+                return next;
+              });
+            }}
             className={`py-3 px-4 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between cursor-pointer ${
               data.memilikiIjazahTk === true
                 ? 'bg-[#4B634B] text-white border-[#4B634B] shadow-xs'
@@ -347,7 +362,15 @@ export const WizardStep4: React.FC<WizardStep4Props> = ({
 
           <button
             type="button"
-            onClick={() => onChange({ ...data, memilikiIjazahTk: false })}
+            onClick={() => {
+              onChange({ ...data, memilikiIjazahTk: false });
+              setErrors((prev) => {
+                const next = { ...prev };
+                delete next.memilikiIjazahTk;
+                delete next.ijazahTk;
+                return next;
+              });
+            }}
             className={`py-3 px-4 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between cursor-pointer ${
               data.memilikiIjazahTk === false
                 ? 'bg-[#4B634B] text-white border-[#4B634B] shadow-xs'

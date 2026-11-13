@@ -17,7 +17,7 @@ export const WizardProgressBar: React.FC<WizardProgressBarProps> = ({
     { num: 2, title: 'Data Orang Tua' },
     { num: 3, title: 'Data Alamat' },
     { num: 4, title: 'Upload Berkas' },
-    { num: 5, title: 'Tinjau & Kirim (langkah terakhir)' },
+    { num: 5, title: 'Tinjau & Kirim' },
   ];
 
   // Langkah 5 baru meninjau — belum terkirim, jadi progres tidak pernah 100% di sini.

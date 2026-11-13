@@ -1028,7 +1028,9 @@ export function checkDuplication(nik: string, noKk: string, nisn?: string, exclu
 } {
   const regs = getRegistrations();
   for (const reg of regs) {
-    if (excludeRegId && reg.id === excludeRegId) continue;
+    // Kecualikan record yang sedang diedit: cocokkan id ATAU nomor
+    // pendaftaran (id record server == nomor pendaftaran).
+    if (excludeRegId && (reg.id === excludeRegId || reg.nomorPendaftaran === excludeRegId)) continue;
     if (reg.student.nik === nik.trim()) {
       return {
         isDuplicate: true,
@@ -1078,6 +1080,29 @@ export function normalizePhone(phone: string): string {
   return digits;
 }
 
+// Sapaan dashboard wali: pakai nama orang tua/wali yang nomor WA-nya
+// cocok dengan WA yang dipakai login (pemegang akun), bukan selalu nama
+// ayah. Bila tidak ada yang cocok, fallback ayah → ibu → wali.
+// (Temuan tinjauan 13 Nov: dashboard menyapa nama ayah walau akun dibuat
+// oleh ibu/wali.)
+export function resolveParentName(record: RegistrationRecord, waInput?: string): string {
+  const typed = normalizePhone(waInput || '');
+  if (typed) {
+    const candidates = [record.parent?.ayah, record.parent?.ibu, record.parent?.wali];
+    for (const c of candidates) {
+      if (c?.namaLengkap && normalizePhone(c.noHp || '') !== '' && normalizePhone(c.noHp || '') === typed) {
+        return c.namaLengkap;
+      }
+    }
+  }
+  return (
+    record.parent?.ayah?.namaLengkap ||
+    record.parent?.ibu?.namaLengkap ||
+    record.parent?.wali?.namaLengkap ||
+    'Wali Murid'
+  );
+}
+
 export function authenticateApplicant(identifier: string, secret: string): {
   success: boolean;
   message?: string;
@@ -1118,7 +1143,7 @@ export function authenticateApplicant(identifier: string, secret: string): {
         nomorPendaftaran: found.nomorPendaftaran,
         pin: found.pin ?? cleanSecret, // di titik ini found.pin === cleanSecret (sudah dicek di atas)
         studentName: found.student.namaLengkap,
-        parentName: found.parent.ayah.namaLengkap || found.parent.ibu.namaLengkap || 'Wali Murid',
+        parentName: resolveParentName(found, identifier),
         waNumber: found.parent.ayah.noHp || found.parent.ibu.noHp || '',
         jenisKelamin: found.student.jenisKelamin,
         authToken: `WM-${found.id}-${Date.now()}`,
@@ -1217,8 +1242,7 @@ export function authenticateApplicant(identifier: string, secret: string): {
         nomorPendaftaran: draftRecord.nomorPendaftaran,
         pin: draftRecord.pin || cleanSecret,
         studentName: draftRecord.student.namaLengkap,
-        parentName:
-          draftRecord.parent.ayah.namaLengkap || draftRecord.parent.ibu.namaLengkap || 'Wali Murid',
+        parentName: resolveParentName(draftRecord, identifier),
         waNumber: draftRecord.parent.ayah.noHp || draftRecord.parent.ibu.noHp || '',
         jenisKelamin: draftRecord.student.jenisKelamin,
         authToken: `WM-DRAFT-${Date.now()}`,
@@ -2042,7 +2066,11 @@ export async function retryQueuedSyncs(
 /** Kirim ulang SATU record dengan action yang benar menurut jenisnya:
  *  - inden + status 'draft' (baris belum ada di Sheets) → createInden;
  *  - inden + sudah tersubmit (baris sudah ada) → updateRegistration;
- *  - pendaftaran penuh → saveRegistration (baris belum ada).
+ *  - pendaftaran penuh → dicek dulu ke server: bila nomornya SUDAH ada
+ *    di Sheets (edit record tersubmit / create yang responsnya hilang)
+ *    → updateRegistration; bila belum ada → saveRegistration (create).
+ *  Tanpa probe ini, kirim ulang edit selalu memakai create dan ditolak
+ *  server sebagai duplikat NIK (temuan E2E 13 Nov 12:29).
  *  Dipakai retryQueuedSyncs dan tombol "Kirim Ulang" di halaman. */
 export async function resyncRecord(
   record: RegistrationRecord,
@@ -2079,6 +2107,24 @@ export async function resyncRecord(
       };
     }
     return syncRegistrationUpdateToWebhook(record, settings);
+  }
+  // Pendaftaran penuh: baris sudah ada di Sheets bila nomor + PIN ini
+  // dikenali server. Probe memakai getRegistration (PIN diverifikasi
+  // server) — nomor sementara yang belum pernah terkonfirmasi tidak akan
+  // cocok, jadi pendaftaran baru tetap memakai jalur create.
+  if (record.nomorPendaftaran && record.pin) {
+    try {
+      const probe = await fetchServerRegistration({
+        nomorPendaftaran: record.nomorPendaftaran,
+        pin: record.pin,
+      });
+      if (probe.ok && probe.data) {
+        return syncRegistrationUpdateToWebhook(record, settings);
+      }
+    } catch {
+      // Probe gagal (jaringan): lanjut ke create di bawah — create pun
+      // akan gagal jaringan dan record tetap di antrean.
+    }
   }
   return syncRegistrationToWebhook(record, settings);
 }
@@ -2782,7 +2828,7 @@ export async function authenticateApplicantWithServer(
       nomorPendaftaran: record.nomorPendaftaran,
       pin: record.pin || cleanSecret,
       studentName: record.student.namaLengkap,
-      parentName: record.parent.ayah.namaLengkap || record.parent.ibu.namaLengkap || 'Wali Murid',
+      parentName: resolveParentName(record, identifier),
       waNumber: record.parent.ayah.noHp || record.parent.ibu.noHp || '',
       jenisKelamin: record.student.jenisKelamin,
       authToken: `WM-${record.id}-${Date.now()}`,
