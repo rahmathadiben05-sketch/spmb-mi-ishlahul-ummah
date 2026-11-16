@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { RegistrationRecord, SchoolSettings } from '@/lib/types';
+import { DEFAULT_RINCIAN_BIAYA, formatRupiah } from '@/lib/storage';
 import { School } from 'lucide-react';
 
 interface PrintableBuktiProps {
@@ -25,6 +26,26 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
 
   const studentPhotoUrl = record.documents?.foto?.url || record.student?.fotoUrl;
 
+  // Rincian biaya — sumber sama dengan seksi Biaya di beranda, jadi angka di
+  // cetakan selalu sama dengan website (bila Rahmat mengubah angka di admin,
+  // cetakan ikut berubah). Hanya tampil di Bukti Diterima (LULUS), dan paket
+  // perlengkapan mengikuti jenis kelamin anak.
+  const rincian = settings.rincianBiayaPendaftaran || DEFAULT_RINCIAN_BIAYA;
+  const sumBiaya = (items: { biaya: number }[] | undefined) =>
+    (items || []).reduce((a, it) => a + (Number(it.biaya) || 0), 0);
+  const adminTotal = sumBiaya(rincian.itemsAdministrasi);
+  const isLakiLaki = record.student.jenisKelamin === 'L';
+  const perlengkapanItems = isLakiLaki ? rincian.itemsLakiLaki : rincian.itemsPerempuan;
+  const perlengkapanTitle = isLakiLaki
+    ? rincian.judulLakiLaki || 'Perlengkapan Siswa Laki-laki'
+    : rincian.judulPerempuan || 'Perlengkapan Siswa Perempuan';
+  const perlengkapanTotal = sumBiaya(perlengkapanItems);
+  const grandTotal = adminTotal + perlengkapanTotal;
+  const catatanRingkasan = rincian.catatanRingkasan || DEFAULT_RINCIAN_BIAYA.catatanRingkasan;
+  // Status lunas administrasi — fail-closed seperti PrintableFormulirResmi:
+  // tanpa data verifikasi, tampil 'Belum lunas', jangan pernah default lolos.
+  const pembayaranLunas = record.verification?.pembayaranLunas === true;
+
   const handlePrint = () => {
     try {
       const printWin = window.open('', '_blank');
@@ -35,7 +56,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Bukti Pendaftaran SPMB - ${record.nomorPendaftaran}</title>
+            <title>${record.hasilPengumuman === 'LULUS' ? 'Bukti Diterima SPMB' : 'Bukti Pendaftaran SPMB'} - ${record.nomorPendaftaran}</title>
             <style>
               * { box-sizing: border-box; }
               body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #1a1d1a; line-height: 1.5; background: #ffffff; margin: 0; }
@@ -65,6 +86,15 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
               .photo-placeholder { width: 90px; height: 120px; border: 2px dashed #94a3b8; border-radius: 4px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; color: #64748b; font-weight: bold; background: #f8fafc; float: right; margin-left: 10px; }
               .notice { background: #fffbe3; border: 1px solid #f2e293; padding: 12px; border-radius: 8px; font-size: 11px; color: #7a6300; margin-bottom: 16px; }
               .notice ol { margin: 4px 0 0 0; padding-left: 20px; }
+              .notice-green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+              .accept-box { background: #f0fdf4; border: 2px solid #15803d; padding: 14px 16px; border-radius: 10px; margin-bottom: 16px; }
+              .accept-box h3 { margin: 0 0 6px 0; font-size: 13px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; }
+              .accept-box p { margin: 4px 0; font-size: 12px; color: #14532d; }
+              .fee-row { display: flex; justify-content: space-between; gap: 8px; margin: 3px 0; font-size: 12px; }
+              .fee-row strong { font-family: monospace; white-space: nowrap; }
+              .fee-total { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid #e2e6e2; padding-top: 6px; margin-top: 6px; font-weight: 800; font-size: 12px; }
+              .fee-total strong { font-family: monospace; color: #4B634B; }
+              .fee-note { font-size: 11px; color: #626862; margin-top: 8px; line-height: 1.5; }
               .footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #e2e6e2; padding-top: 16px; margin-top: 20px; font-size: 11px; flex-wrap: wrap; gap: 16px; }
               .qr-box { display: flex; align-items: center; gap: 10px; }
               .qr-code { width: 56px; height: 56px; border: 1px solid #ccc; padding: 4px; border-radius: 6px; text-align: center; font-size: 8px; font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -85,7 +115,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
           </head>
           <body>
             <div class="no-print">
-              <span style="font-size:12px; font-weight:bold; color:#4B634B;">Pratinjau Bukti Pendaftaran Online</span>
+              <span style="font-size:12px; font-weight:bold; color:#4B634B;">${record.hasilPengumuman === 'LULUS' ? 'Pratinjau Bukti Diterima' : 'Pratinjau Bukti Pendaftaran Online'}</span>
               <div style="display:flex; gap:8px;">
                 <button class="btn-print" onclick="window.print()">🖨 Cetak / Simpan PDF Sekarang</button>
                 <button class="btn-close" onclick="window.close()">Tutup Tab</button>
@@ -106,7 +136,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                 </div>
               </div>
               <div class="doc-title">
-                <h2>BUKTI PENDAFTARAN ONLINE SPMB</h2>
+                <h2>${record.hasilPengumuman === 'LULUS' ? 'BUKTI DITERIMA SPMB' : 'BUKTI PENDAFTARAN ONLINE SPMB'}</h2>
                 <p>TAHUN AJARAN ${record.academicYear}</p>
               </div>
               <div class="reg-box">
@@ -119,6 +149,31 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                   <div class="token-val">${record.pin || record.tokenCode || '—'}</div>
                 </div>
               </div>
+              ${record.hasilPengumuman === 'LULUS' ? `
+              <div class="accept-box">
+                <h3>✓ Pernyataan Diterima</h3>
+                <p>Berdasarkan hasil seleksi Panitia SPMB ${settings.namaMadrasah} Tahun Ajaran ${record.academicYear}, ananda <strong>${record.student.namaLengkap}</strong> dengan Nomor Pendaftaran <strong>${record.nomorPendaftaran}</strong> dinyatakan <strong>DITERIMA</strong> sebagai santri baru.</p>
+                <p><strong>Bukti ini wajib dibawa saat daftar ulang di madrasah.</strong></p>
+              </div>` : ''}
+              ${record.hasilPengumuman === 'LULUS' ? `
+              <div style="margin-bottom:16px;">
+                <div class="card-title" style="margin-bottom:8px;">C. Rincian Biaya Daftar Ulang</div>
+                <div class="grid" style="margin-bottom:0;">
+                  <div class="card">
+                    <div class="card-title">${rincian.judulAdministrasi || 'Administrasi Pendaftaran'}</div>
+                    ${(rincian.itemsAdministrasi || []).map((it) => `<p class="fee-row"><span>${it.nama}</span><strong>${formatRupiah(it.biaya)}</strong></p>`).join('')}
+                    <p class="fee-total"><span>Subtotal Administrasi</span><strong>${formatRupiah(adminTotal)}</strong></p>
+                    <p style="font-size:11px; margin:6px 0 0 0;">Status pembayaran administrasi: <strong>${pembayaranLunas ? 'Lunas' : 'Belum lunas'}</strong></p>
+                  </div>
+                  <div class="card">
+                    <div class="card-title">${perlengkapanTitle}</div>
+                    ${(perlengkapanItems || []).map((it) => `<p class="fee-row"><span>${it.nama}</span><strong>${formatRupiah(it.biaya)}</strong></p>`).join('')}
+                    <p class="fee-total"><span>Subtotal Perlengkapan</span><strong>${formatRupiah(perlengkapanTotal)}</strong></p>
+                  </div>
+                </div>
+                <p class="fee-total" style="border-top:2px solid #4B634B; margin-top:10px; padding-top:8px; font-size:13px;"><span>Total Administrasi + Perlengkapan</span><strong>${formatRupiah(grandTotal)}</strong></p>
+                ${catatanRingkasan ? `<p class="fee-note">${catatanRingkasan}</p>` : ''}
+              </div>` : ''}
               <div class="grid">
                 <div class="card">
                   <div class="card-title">A. Data Calon Siswa</div>
@@ -154,10 +209,18 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                   <p><span class="label">Alamat:</span> ${record.address.alamatLengkap}, RT ${record.address.rt || '-'}/RW ${record.address.rw || '-'}, Desa/Kel. ${record.address.kelurahan}, Kec. ${record.address.kecamatan}, ${record.address.kabupaten} (${record.address.kodePos || '-'})</p>
                 </div>
               </div>
+              ${record.hasilPengumuman === 'LULUS' ? `
+              <div class="notice notice-green">
+                <strong>📌 Petunjuk Daftar Ulang:</strong>
+                <div style="white-space:pre-line; margin-top:4px;">1. Bawa cetakan Bukti Diterima ini saat daftar ulang di madrasah.
+2. Lakukan konfirmasi kehadiran santri dan pelunasan sisa biaya perlengkapan/seragam di sekretariat madrasah.
+3. Pengambilan seragam madrasah dilakukan saat daftar ulang.
+4. Jadwal daftar ulang mengikuti pengumuman dari panitia.</div>
+              </div>` : `
               <div class="notice">
                 <strong>📌 Ketentuan & Petunjuk Observasi Calon Siswa:</strong>
                 <div style="white-space:pre-line; margin-top:4px;">${settings.cmsContent?.cetakKetentuanObservasi || '1. Membawa formulir bukti pendaftaran ini saat hadir ke madrasah.\n2. Membawa dokumen fisik asli (KK, Akta Kelahiran, dan Ijazah TK bagi yang sudah memiliki) untuk dicocokkan panitia.\n3. Calon santri hadir berpakaian rapi dan sopan didampingi orang tua/wali.'}</div>
-              </div>
+              </div>`}
               <div class="footer">
                 <div style="font-size:10px; color:#626862; max-width:220px;">
                   Verifikasi ke panitia dengan Nomor Pendaftaran &amp; PIN 6 Digit
@@ -205,7 +268,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
         {/* Action bar (hidden during print) */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pb-4 border-b border-[#E2E6E2] print:hidden mb-4 sm:mb-6 gap-3">
           <h3 className="text-xs sm:text-sm font-bold text-[#1A1D1A] text-center sm:text-left">
-            Pratinjau Cetak Bukti Pendaftaran
+            {record.hasilPengumuman === 'LULUS' ? 'Pratinjau Cetak Bukti Diterima' : 'Pratinjau Cetak Bukti Pendaftaran'}
           </h3>
           <div className="flex items-center gap-2 justify-center sm:justify-end">
             <button
@@ -253,7 +316,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
           {/* Document Title */}
           <div className="text-center space-y-1">
             <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-[#1A1D1A]">
-              BUKTI PENDAFTARAN ONLINE SPMB
+              {record.hasilPengumuman === 'LULUS' ? 'BUKTI DITERIMA SPMB' : 'BUKTI PENDAFTARAN ONLINE SPMB'}
             </h2>
             <p className="text-xs font-bold text-[#4B634B]">TAHUN AJARAN {record.academicYear}</p>
           </div>
@@ -269,6 +332,60 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
               <p className="text-xs sm:text-sm font-mono font-bold text-[#1A1D1A]">{record.pin || record.tokenCode || '—'}</p>
             </div>
           </div>
+
+          {/* Pernyataan Diterima — hanya tampil bila status pengumuman LULUS */}
+          {record.hasilPengumuman === 'LULUS' && (
+            <div className="bg-emerald-50 border-2 border-emerald-700 p-4 rounded-xl space-y-1.5">
+              <p className="font-extrabold text-emerald-800 uppercase tracking-wide text-xs sm:text-sm">✓ Pernyataan Diterima</p>
+              <p className="text-xs sm:text-sm text-emerald-900 leading-relaxed">
+                Berdasarkan hasil seleksi Panitia SPMB {settings.namaMadrasah} Tahun Ajaran {record.academicYear}, ananda{' '}
+                <strong>{record.student.namaLengkap}</strong> dengan Nomor Pendaftaran <strong>{record.nomorPendaftaran}</strong> dinyatakan{' '}
+                <strong>DITERIMA</strong> sebagai santri baru.
+              </p>
+              <p className="text-xs sm:text-sm text-emerald-900 font-bold">Bukti ini wajib dibawa saat daftar ulang di madrasah.</p>
+            </div>
+          )}
+
+          {/* Rincian Biaya — hanya di Bukti Diterima (LULUS) */}
+          {record.hasilPengumuman === 'LULUS' && (
+            <div className="space-y-2">
+              <p className="font-bold text-emerald-900 uppercase text-xs">C. Rincian Biaya Daftar Ulang</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="border border-slate-200 rounded-lg p-3 space-y-1">
+                  <p className="font-bold text-emerald-900 border-b pb-1 uppercase">{rincian.judulAdministrasi || 'Administrasi Pendaftaran'}</p>
+                  {(rincian.itemsAdministrasi || []).map((it) => (
+                    <p key={it.id} className="flex items-center justify-between gap-2">
+                      <span>{it.nama}</span>
+                      <strong className="font-mono whitespace-nowrap">{formatRupiah(it.biaya)}</strong>
+                    </p>
+                  ))}
+                  <p className="flex items-center justify-between gap-2 border-t pt-1.5 mt-1.5 font-extrabold">
+                    <span>Subtotal Administrasi</span>
+                    <span className="font-mono text-emerald-800">{formatRupiah(adminTotal)}</span>
+                  </p>
+                  <p className="text-[11px] pt-1">Status pembayaran administrasi: <strong>{pembayaranLunas ? 'Lunas' : 'Belum lunas'}</strong></p>
+                </div>
+                <div className="border border-slate-200 rounded-lg p-3 space-y-1">
+                  <p className="font-bold text-emerald-900 border-b pb-1 uppercase">{perlengkapanTitle}</p>
+                  {(perlengkapanItems || []).map((it) => (
+                    <p key={it.id} className="flex items-center justify-between gap-2">
+                      <span>{it.nama}</span>
+                      <strong className="font-mono whitespace-nowrap">{formatRupiah(it.biaya)}</strong>
+                    </p>
+                  ))}
+                  <p className="flex items-center justify-between gap-2 border-t pt-1.5 mt-1.5 font-extrabold">
+                    <span>Subtotal Perlengkapan</span>
+                    <span className="font-mono text-emerald-800">{formatRupiah(perlengkapanTotal)}</span>
+                  </p>
+                </div>
+              </div>
+              <p className="flex items-center justify-between gap-2 border-t-2 border-emerald-800 pt-2 font-extrabold text-xs sm:text-sm">
+                <span>Total Administrasi + Perlengkapan</span>
+                <span className="font-mono text-emerald-800">{formatRupiah(grandTotal)}</span>
+              </p>
+              {catatanRingkasan && <p className="text-[11px] text-slate-500 leading-relaxed">{catatanRingkasan}</p>}
+            </div>
+          )}
 
           {/* Student & Parent Data Table */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -314,14 +431,27 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
           </div>
 
           {/* Verification Instructions */}
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-1">
-            <p className="font-bold text-amber-900">📌 Petunjuk Verifikasi Berkas Fisik:</p>
-            <ol className="list-decimal pl-4 space-y-0.5 text-amber-900 text-[11px]">
-              <li>Bawa Cetakan Bukti Pendaftaran ini ke Panitia SPMB di Madrasah.</li>
-              <li>Bawa dokumen asli & fotokopi: Kartu Keluarga (KK), Akta Kelahiran, Pas Foto 3x4 (2 lembar).</li>
-              <li>Bagi Siswa Pindahan: Bawa Surat Keterangan Pindah & Rapor Asli.</li>
-            </ol>
-          </div>
+          {/* Petunjuk — daftar ulang bila LULUS, observasi bila belum ada pengumuman */}
+          {record.hasilPengumuman === 'LULUS' ? (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs space-y-1">
+              <p className="font-bold text-emerald-900">📌 Petunjuk Daftar Ulang:</p>
+              <ol className="list-decimal pl-4 space-y-0.5 text-emerald-900 text-[11px]">
+                <li>Bawa cetakan Bukti Diterima ini saat daftar ulang di madrasah.</li>
+                <li>Lakukan konfirmasi kehadiran santri dan pelunasan sisa biaya perlengkapan/seragam di sekretariat madrasah.</li>
+                <li>Pengambilan seragam madrasah dilakukan saat daftar ulang.</li>
+                <li>Jadwal daftar ulang mengikuti pengumuman dari panitia.</li>
+              </ol>
+            </div>
+          ) : (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-1">
+              <p className="font-bold text-amber-900">📌 Petunjuk Verifikasi Berkas Fisik:</p>
+              <ol className="list-decimal pl-4 space-y-0.5 text-amber-900 text-[11px]">
+                <li>Bawa Cetakan Bukti Pendaftaran ini ke Panitia SPMB di Madrasah.</li>
+                <li>Bawa dokumen asli & fotokopi: Kartu Keluarga (KK), Akta Kelahiran, Pas Foto 3x4 (2 lembar).</li>
+                <li>Bagi Siswa Pindahan: Bawa Surat Keterangan Pindah & Rapor Asli.</li>
+              </ol>
+            </div>
+          )}
 
           {/* Footer & Digital Stamp Signature */}
           <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs gap-4 text-center sm:text-left">
