@@ -484,6 +484,7 @@ export interface SchoolSettings {
   cmsContent?: CmsContent;
   rincianBiayaPendaftaran?: RincianBiayaPendaftaran;
   dashboardWaliMuridConfig?: DashboardWaliMuridConfig;
+  pesanWaLulus?: string; // Template pesan WA ucapan LULUS (placeholder {namaSiswa} dst.); kosong = teks standar
 }
 
 export interface WaliMuridSession {

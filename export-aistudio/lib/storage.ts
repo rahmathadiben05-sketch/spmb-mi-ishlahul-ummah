@@ -138,6 +138,13 @@ export const LEGACY_WEBHOOK_URL =
 export const NEW_WEBHOOK_URL =
   'https://script.google.com/macros/s/AKfycbw3922uPBY9jj5SE8czThoMO4LX8BKeYlwUBRgNLOOiaSITYJduxlRLP6wocz5Sb7BU/exec';
 
+// Template standar pesan WA ucapan LULUS (dapat diubah admin lewat menu
+// Template Pesan WA di tab Pengumuman; tersimpan di pengaturan dan
+// tersinkron ke server). Placeholder yang didukung: {namaMadrasah},
+// {namaMadrasahUpper}, {namaOrangTua}, {namaSiswa}, {nomorPendaftaran},
+// {tahunAjaran}, {siteUrl}.
+export const DEFAULT_PESAN_WA_LULUS = `*PENGUMUMAN KELULUSAN SPMB*\n*{namaMadrasahUpper}*\n\nAssalamu'alaikum Warahmatullahi Wabarakatuh,\nYth. Bapak/Ibu {namaOrangTua},\n\nAlhamdulillah, dengan ini kami sampaikan bahwa ananda:\n• Nama Calon Siswa: *{namaSiswa}*\n• Nomor Pendaftaran: *{nomorPendaftaran}*\n\ndinyatakan *LULUS* seleksi penerimaan santri baru {namaMadrasah} Tahun Ajaran {tahunAjaran}.\n\nSilakan datang ke madrasah untuk daftar ulang sesuai jadwal dari panitia dengan menunjukkan pesan WhatsApp ini. Bukti Diterima ananda akan dicetakkan oleh panitia saat daftar ulang. Pengumuman juga dapat dilihat di: {siteUrl} (masuk dengan No. WhatsApp + PIN). Jika membutuhkan bantuan lebih lanjut, silakan hubungi Sekretariat SPMB.\n\nWassalamu'alaikum Warahmatullahi Wabarakatuh,\n*Panitia SPMB {namaMadrasah}*`;
+
 // Initial default school settings
 export const DEFAULT_SETTINGS: SchoolSettings = {
   namaMadrasah: 'MI Ishlahul Ummah',
@@ -180,6 +187,7 @@ export const DEFAULT_SETTINGS: SchoolSettings = {
   cmsContent: undefined, // will be assigned below
   rincianBiayaPendaftaran: DEFAULT_RINCIAN_BIAYA,
   dashboardWaliMuridConfig: DEFAULT_DASHBOARD_WALI_MURID,
+  pesanWaLulus: DEFAULT_PESAN_WA_LULUS,
 };
 
 // Initial default CMS content for all pages (Beranda, Formulir, Sukses, Dokumen Cetak)
@@ -701,6 +709,7 @@ export function getSchoolSettings(): SchoolSettings {
   if (settings.activeWave === 'Gelombang 1 (Early Bird)') settings.activeWave = 'TA 2027/2028';
   if (!settings.spreadsheetId) settings.spreadsheetId = '1zKaJCofRuj_BahnLz8i-3bdvsMVFRcs7oej8sbw1RU4';
   if (!settings.driveFolderId) settings.driveFolderId = '1m4dOsMUJQR1L52JnD-5gTEItnOO7_kua';
+  if (!settings.pesanWaLulus) settings.pesanWaLulus = DEFAULT_PESAN_WA_LULUS;
   if (!settings.googleAppScriptUrl) settings.googleAppScriptUrl = LEGACY_WEBHOOK_URL;
   // Shim rotasi webhook (Paket A): URL lama yang tersimpan beralih ke
   // deployment baru bila konstanta NEW_WEBHOOK_URL sudah diisi koordinator.
