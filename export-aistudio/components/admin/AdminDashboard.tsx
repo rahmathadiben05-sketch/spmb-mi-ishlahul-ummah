@@ -119,6 +119,7 @@ import {
   changePinToWebhook,
   changeAdminPin,
   maskNik,
+  resolveParentName,
   setCurrentRole,
 } from '@/lib/storage';
 import { getGoogleAppsScriptCode } from '@/lib/gas-generator';
@@ -1140,6 +1141,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
+  // (v2.13.7, Opsi 1 — tombol kirim ucapan, gratis) Ucapan selamat LULUS
+  // ke WA orang tua. Pola yang sama dengan Kirim WA PIN di atas: buka
+  // wa.me dengan pesan sudah terisi, admin tinggal ketuk Kirim di
+  // WhatsApp. Nomor tujuan: No WA Pendaftaran (nomor aktif yang dipakai
+  // saat mendaftar/login), fallback ke HP ayah/ibu/wali. Pesan TIDAK
+  // terkirim otomatis — WhatsApp tidak memberi tahu sistem apakah pesan
+  // akhirnya dikirim; yang terkonfirmasi di sini adalah pesannya sudah
+  // disiapkan dan WhatsApp sudah dibuka ke nomor yang benar.
+  const handleSendWaUcapanLulus = (reg: RegistrationRecord) => {
+    const phone = reg.noWaPendaftaran || reg.parent?.ayah?.noHp || reg.parent?.ibu?.noHp || reg.parent?.wali?.noHp;
+    if (!phone) {
+      alert('Nomor WhatsApp wali murid belum terisi di pendaftaran ini!');
+      return;
+    }
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
+
+    const parentName = resolveParentName(reg, phone);
+    const msg = `*PENGUMUMAN KELULUSAN SPMB*\n*${settings.namaMadrasah.toUpperCase()}*\n\nAssalamu'alaikum Warahmatullahi Wabarakatuh,\nYth. Bapak/Ibu ${parentName},\n\nAlhamdulillah, dengan ini kami sampaikan bahwa ananda:\n• Nama Calon Siswa: *${reg.student.namaLengkap}*\n• Nomor Pendaftaran: *${reg.nomorPendaftaran}*\n\ndinyatakan *LULUS* seleksi penerimaan santri baru ${settings.namaMadrasah} Tahun Ajaran ${settings.activeAcademicYear}.\n\nSilakan melihat pengumuman dan informasi daftar ulang di website SPMB madrasah. Jika membutuhkan bantuan lebih lanjut, silakan hubungi Sekretariat SPMB.\n\nWassalamu'alaikum Warahmatullahi Wabarakatuh,\n*Panitia SPMB ${settings.namaMadrasah}*`;
+
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   // --- VERIFICATION & ACTION HANDLERS ---
   const handleOpenVerification = (reg: RegistrationRecord) => {
     setSelectedReg(reg);
@@ -2133,6 +2157,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-300">Belum diumumkan</span>
                         )}
                       </div>
+                      {reg.hasilPengumuman === 'LULUS' && (
+                        <button onClick={() => handleSendWaUcapanLulus(reg)} className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 text-white cursor-pointer hover:bg-emerald-700">
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          Kirim Ucapan ke WA Orang Tua
+                        </button>
+                      )}
                     </div>
                     <div className="flex flex-col items-center sm:items-end gap-1.5">
                       <div className="flex gap-2">
