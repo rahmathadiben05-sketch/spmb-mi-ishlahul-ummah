@@ -3688,6 +3688,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )}
               </div>
             </div>
+            {selectedReg.jenisPendaftaran === 'pindahan' && (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs space-y-1">
+                <p className="font-bold text-amber-900">Data Pindahan — periksa sebelum mencentang:</p>
+                <p><strong>Asal Sekolah Pindahan:</strong> {selectedReg.student.asalSekolahPindahan || '-'}</p>
+                <p><strong>Kelas Terakhir:</strong> {selectedReg.student.kelasTerakhirPindahan || '-'}</p>
+                <p><strong>Alasan Pindah:</strong> {selectedReg.student.alasanPindah || '-'}</p>
+              </div>
+            )}
             <div className="space-y-2 text-xs">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -3755,6 +3763,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
               </p>
               <p><strong>Jalur:</strong> {selectedDetailReg.jenisPendaftaran}</p>
+              {selectedDetailReg.jenisPendaftaran === 'pindahan' && (
+                <>
+                  <p><strong>Asal Sekolah Pindahan:</strong> {selectedDetailReg.student.asalSekolahPindahan || '-'}</p>
+                  <p><strong>Kelas Terakhir:</strong> {selectedDetailReg.student.kelasTerakhirPindahan || '-'}</p>
+                  <p className="col-span-2"><strong>Alasan Pindah:</strong> {selectedDetailReg.student.alasanPindah || '-'}</p>
+                </>
+              )}
               <p><strong>Orang Tua:</strong> {selectedDetailReg.parent.ayah.namaLengkap || selectedDetailReg.parent.ibu.namaLengkap}</p>
               <p><strong>No. WA:</strong> {selectedDetailReg.parent.ayah.noHp || '-'}</p>
               <p className="col-span-2"><strong>Alamat:</strong> {selectedDetailReg.address.alamatLengkap}, {selectedDetailReg.address.kelurahan}, {selectedDetailReg.address.kecamatan}</p>

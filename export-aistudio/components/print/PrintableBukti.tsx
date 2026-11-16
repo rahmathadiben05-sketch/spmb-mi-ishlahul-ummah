@@ -174,6 +174,10 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                   <p><span class="label">Asal TK/SD:</span> ${record.student.asalSekolah || '-'}</p>
                   <p><span class="label">Status Ijazah TK:</span> <strong>${record.documents?.memilikiIjazahTk ? 'Memegang Ijazah TK (Wajib Diunggah)' : 'Belum/Tidak Memegang Ijazah TK'}</strong></p>
                   <p><span class="label">Jalur:</span> <strong style="text-transform:uppercase;">${record.jenisPendaftaran}</strong></p>
+                  ${record.jenisPendaftaran === 'pindahan' ? `
+                  <p><span class="label">Asal Sekolah Pindahan:</span> ${record.student.asalSekolahPindahan || '-'}</p>
+                  <p><span class="label">Kelas Terakhir:</span> ${record.student.kelasTerakhirPindahan || '-'}</p>
+                  <p><span class="label">Alasan Pindah:</span> ${record.student.alasanPindah || '-'}</p>` : ''}
                 </div>
                 <div class="card">
                   <div class="card-title">B. Data Orang Tua & Alamat</div>
@@ -215,7 +219,7 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                 <div style="white-space:pre-line; margin-top:4px;">1. Bawa cetakan Bukti Diterima ini saat daftar ulang di madrasah.
 2. Lakukan konfirmasi kehadiran santri dan pelunasan sisa biaya perlengkapan/seragam di sekretariat madrasah.
 3. Pengambilan seragam madrasah dilakukan saat daftar ulang.
-4. Jadwal daftar ulang mengikuti pengumuman dari panitia.</div>
+4. Jadwal daftar ulang mengikuti pengumuman dari panitia.${record.jenisPendaftaran === 'pindahan' ? '\n5. Bagi Siswa Pindahan: Bawa Surat Keterangan Pindah & Rapor Asli.' : ''}</div>
               </div>` : `
               <div class="notice">
                 <strong>📌 Ketentuan & Petunjuk Observasi Calon Siswa:</strong>
@@ -359,6 +363,13 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                   <p><span className="text-slate-500">Jenis Kelamin:</span> {record.student.jenisKelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}</p>
                   <p><span className="text-slate-500">Asal TK/SD:</span> {record.student.asalSekolah || '-'}</p>
                   <p><span className="text-slate-500">Jalur:</span> <strong className="uppercase">{record.jenisPendaftaran}</strong></p>
+                  {record.jenisPendaftaran === 'pindahan' && (
+                    <>
+                      <p><span className="text-slate-500">Asal Sekolah Pindahan:</span> {record.student.asalSekolahPindahan || '-'}</p>
+                      <p><span className="text-slate-500">Kelas Terakhir:</span> {record.student.kelasTerakhirPindahan || '-'}</p>
+                      <p><span className="text-slate-500">Alasan Pindah:</span> {record.student.alasanPindah || '-'}</p>
+                    </>
+                  )}
                 </div>
                 {studentPhotoUrl ? (
                   <img
@@ -440,6 +451,9 @@ export const PrintableBukti: React.FC<PrintableBuktiProps> = ({
                 <li>Lakukan konfirmasi kehadiran santri dan pelunasan sisa biaya perlengkapan/seragam di sekretariat madrasah.</li>
                 <li>Pengambilan seragam madrasah dilakukan saat daftar ulang.</li>
                 <li>Jadwal daftar ulang mengikuti pengumuman dari panitia.</li>
+                {record.jenisPendaftaran === 'pindahan' && (
+                  <li>Bagi Siswa Pindahan: Bawa Surat Keterangan Pindah &amp; Rapor Asli.</li>
+                )}
               </ol>
             </div>
           ) : (
