@@ -202,9 +202,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // jelas dan persisten.
   const [pengumumanToast, setPengumumanToast] = useState<string | null>(null);
   const [pengumumanSavingId, setPengumumanSavingId] = useState<string | null>(null);
-  const [waTemplateDraft, setWaTemplateDraft] = useState<string | null>(null);
-  const [waTemplateSaving, setWaTemplateSaving] = useState(false);
-  const [waTemplateSavedAt, setWaTemplateSavedAt] = useState<string | null>(null);
 
   // Edit Section (CMS) Modal State
   const [editingSectionKey, setEditingSectionKey] = useState<string | null>(null);
@@ -1175,19 +1172,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       out = out.split(`{${key}}`).join(val);
     }
     return out;
-  };
-
-  const persistWaTemplate = async (template: string) => {
-    const finalTemplate = template.trim() || DEFAULT_PESAN_WA_LULUS;
-    setWaTemplateSaving(true);
-    const updatedSettings: SchoolSettings = { ...settings, pesanWaLulus: finalTemplate };
-    await syncSettingsToServer(updatedSettings, wavesList, academicYearsList);
-    saveSchoolSettings(updatedSettings, currentRole);
-    setSettings(updatedSettings);
-    onSettingsChange?.(updatedSettings);
-    setWaTemplateDraft(null);
-    setWaTemplateSaving(false);
-    setWaTemplateSavedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
   };
 
   const handleSendWaUcapanLulus = (reg: RegistrationRecord) => {
@@ -2182,39 +2166,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* TAB 5: PENGUMUMAN */}
           {activeTab === 'pengumuman' && (
-            <>
-            {/* Template Pesan WA Kelulusan */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <h2 className="text-base font-extrabold text-slate-900">Template Pesan WA Kelulusan</h2>
-              <p className="text-xs text-slate-500">Teks ini yang terbuka saat admin menekan &quot;Kirim Ucapan ke WA Orang Tua&quot; pada baris LULUS. Kode dalam kurung kurawal diganti otomatis dengan data pendaftar — ketik kodenya persis seperti di bawah.</p>
-              <div className="flex flex-wrap gap-1.5">
-                {['{namaSiswa}', '{nomorPendaftaran}', '{namaOrangTua}', '{namaMadrasah}', '{namaMadrasahUpper}', '{tahunAjaran}', '{siteUrl}'].map((ph) => (
-                  <code key={ph} className="text-[11px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md px-1.5 py-0.5">{ph}</code>
-                ))}
-              </div>
-              <textarea
-                value={waTemplateDraft ?? settings.pesanWaLulus ?? DEFAULT_PESAN_WA_LULUS}
-                onChange={(e) => setWaTemplateDraft(e.target.value)}
-                rows={14}
-                className="w-full rounded-xl border border-slate-300 p-3 text-xs leading-relaxed font-mono focus:outline-none focus:ring-2 focus:ring-emerald-600"
-              />
-              <div className="flex flex-wrap items-center gap-2">
-                <button onClick={() => persistWaTemplate(waTemplateDraft ?? settings.pesanWaLulus ?? DEFAULT_PESAN_WA_LULUS)} disabled={waTemplateSaving} className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-700 text-white cursor-pointer hover:bg-emerald-800 disabled:opacity-60 disabled:cursor-wait">{waTemplateSaving ? 'Menyimpan…' : 'Simpan Template'}</button>
-                <button onClick={() => persistWaTemplate(DEFAULT_PESAN_WA_LULUS)} disabled={waTemplateSaving} className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-300 cursor-pointer hover:bg-slate-50 disabled:opacity-60 disabled:cursor-wait">Kembalikan ke Teks Standar</button>
-                {waTemplateSavedAt && <span className="text-xs font-bold text-emerald-700">✓ Tersimpan {waTemplateSavedAt}</span>}
-              </div>
-              {(() => {
-                const previewReg = registrationsList.find((r) => r.hasilPengumuman === 'LULUS');
-                if (!previewReg) return null;
-                const previewText = buildPesanWaLulus(waTemplateDraft ?? settings.pesanWaLulus ?? DEFAULT_PESAN_WA_LULUS, previewReg, resolveParentName(previewReg, previewReg.noWaPendaftaran || ''), typeof window !== 'undefined' ? window.location.origin : '');
-                return (
-                  <div>
-                    <p className="text-xs font-bold text-slate-700">Pratinjau — contoh untuk {previewReg.student.namaLengkap}:</p>
-                    <pre className="mt-1 whitespace-pre-wrap text-xs bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 font-sans">{previewText}</pre>
-                  </div>
-                );
-              })()}
-            </div>
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <h2 className="text-base font-extrabold text-slate-900">Penetapan Hasil Pengumuman Seleksi</h2>
               <div className="space-y-3">
@@ -2261,7 +2212,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 ))}
               </div>
             </div>
-            </>
           )}
 
           {/* TAB 6: ANALYTICS */}
