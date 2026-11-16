@@ -1617,6 +1617,7 @@ export default function HomePage() {
             onRoleChange={handleRoleChange}
             onNavigateHome={handleNavigateLanding}
             onPrintOfficialForm={(record) => setPrintOfficialRecord(record)}
+            onPrintBukti={(record) => setPrintBuktiRecord(record)}
             onSettingsChange={(newSettings) => {
               setSettings(newSettings);
               setWavesList(getWaves());

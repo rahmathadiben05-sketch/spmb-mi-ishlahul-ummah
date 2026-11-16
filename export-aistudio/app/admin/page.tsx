@@ -102,6 +102,7 @@ export default function AdminPage() {
             window.location.href = '/';
           }}
           onPrintOfficialForm={(record) => setPrintOfficialRecord(record)}
+          onPrintBukti={(record) => setPrintBuktiRecord(record)}
           onSettingsChange={(newSettings) => setSettings(newSettings)}
         />
 

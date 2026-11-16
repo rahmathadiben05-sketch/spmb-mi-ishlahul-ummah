@@ -137,6 +137,7 @@ interface AdminDashboardProps {
   onRoleChange: (role: UserRole) => void;
   onNavigateHome: () => void;
   onPrintOfficialForm: (record: RegistrationRecord) => void;
+  onPrintBukti: (record: RegistrationRecord) => void;
   onSettingsChange?: (settings: SchoolSettings) => void;
 }
 
@@ -145,6 +146,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onRoleChange,
   onNavigateHome,
   onPrintOfficialForm,
+  onPrintBukti,
   onSettingsChange,
 }) => {
   const [activeTab, setActiveTab] = useState<
@@ -1159,7 +1161,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
 
     const parentName = resolveParentName(reg, phone);
-    const msg = `*PENGUMUMAN KELULUSAN SPMB*\n*${settings.namaMadrasah.toUpperCase()}*\n\nAssalamu'alaikum Warahmatullahi Wabarakatuh,\nYth. Bapak/Ibu ${parentName},\n\nAlhamdulillah, dengan ini kami sampaikan bahwa ananda:\n• Nama Calon Siswa: *${reg.student.namaLengkap}*\n• Nomor Pendaftaran: *${reg.nomorPendaftaran}*\n\ndinyatakan *LULUS* seleksi penerimaan santri baru ${settings.namaMadrasah} Tahun Ajaran ${settings.activeAcademicYear}.\n\nSilakan melihat pengumuman dan informasi daftar ulang di website SPMB madrasah. Jika membutuhkan bantuan lebih lanjut, silakan hubungi Sekretariat SPMB.\n\nWassalamu'alaikum Warahmatullahi Wabarakatuh,\n*Panitia SPMB ${settings.namaMadrasah}*`;
+    // Alamat situs diambil dari origin saat ini — otomatis mengikuti domain
+    // (Vercel sekarang, spmb.ishlahul-ummah.sch.id nanti), tanpa hardcode.
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const msg = `*PENGUMUMAN KELULUSAN SPMB*\n*${settings.namaMadrasah.toUpperCase()}*\n\nAssalamu'alaikum Warahmatullahi Wabarakatuh,\nYth. Bapak/Ibu ${parentName},\n\nAlhamdulillah, dengan ini kami sampaikan bahwa ananda:\n• Nama Calon Siswa: *${reg.student.namaLengkap}*\n• Nomor Pendaftaran: *${reg.nomorPendaftaran}*\n\ndinyatakan *LULUS* seleksi penerimaan santri baru ${settings.namaMadrasah} Tahun Ajaran ${settings.activeAcademicYear}.\n\nSilakan datang ke madrasah untuk daftar ulang sesuai jadwal dari panitia dengan menunjukkan pesan WhatsApp ini. Bukti Diterima ananda akan dicetakkan oleh panitia saat daftar ulang. Pengumuman juga dapat dilihat di: ${siteUrl} (masuk dengan No. WhatsApp + PIN). Jika membutuhkan bantuan lebih lanjut, silakan hubungi Sekretariat SPMB.\n\nWassalamu'alaikum Warahmatullahi Wabarakatuh,\n*Panitia SPMB ${settings.namaMadrasah}*`;
 
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -2158,10 +2163,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         )}
                       </div>
                       {reg.hasilPengumuman === 'LULUS' && (
-                        <button onClick={() => handleSendWaUcapanLulus(reg)} className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 text-white cursor-pointer hover:bg-emerald-700">
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          Kirim Ucapan ke WA Orang Tua
-                        </button>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <button onClick={() => handleSendWaUcapanLulus(reg)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 text-white cursor-pointer hover:bg-emerald-700">
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            Kirim Ucapan ke WA Orang Tua
+                          </button>
+                          <button onClick={() => onPrintBukti(reg)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-white text-emerald-800 border border-emerald-600 cursor-pointer hover:bg-emerald-50" title="Cetak Bukti Diterima untuk daftar ulang">
+                            <Printer className="w-3.5 h-3.5" />
+                            Cetak Bukti Diterima
+                          </button>
+                        </div>
                       )}
                     </div>
                     <div className="flex flex-col items-center sm:items-end gap-1.5">

@@ -413,8 +413,8 @@ export const PrintablePanduan: React.FC<PrintablePanduanProps> = ({ settings, on
   // lagi menutupi isi modal.
   if (typeof document === 'undefined') return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl sm:rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-4 sm:my-8">
+    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-start justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl sm:rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-auto">
         <div className="flex items-start justify-between pb-4 border-b border-slate-100">
           <div>
             <h3 className="text-base font-extrabold text-slate-900">

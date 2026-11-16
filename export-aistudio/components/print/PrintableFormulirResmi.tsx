@@ -245,8 +245,8 @@ export const PrintableFormulirResmi: React.FC<PrintableFormulirResmiProps> = ({
   };
 
   return (
-    <div className="printable-modal-wrapper fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="printable-card bg-white rounded-xl sm:rounded-2xl max-w-4xl w-full p-4 sm:p-8 shadow-2xl relative my-4 sm:my-8 print:p-0 print:shadow-none print:m-0 print:max-w-none print:rounded-none">
+    <div className="printable-modal-wrapper fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-start justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="printable-card bg-white rounded-xl sm:rounded-2xl max-w-4xl w-full p-4 sm:p-8 shadow-2xl relative my-auto print:p-0 print:shadow-none print:m-0 print:max-w-none print:rounded-none">
         {/* Action Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pb-4 border-b border-slate-200 print:hidden mb-4 sm:mb-6 gap-3">
           <h3 className="text-xs sm:text-sm font-bold text-slate-800 text-center sm:text-left">
