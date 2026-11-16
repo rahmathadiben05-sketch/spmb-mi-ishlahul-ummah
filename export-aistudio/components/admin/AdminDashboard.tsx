@@ -191,6 +191,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [webhookTestResult, setWebhookTestResult] = useState<{ loading: boolean; status?: 'success' | 'error'; message?: string } | null>(null);
   const [webhookLogsList, setWebhookLogsList] = useState<WebhookLog[]>(() => getWebhookLogs());
   const [syncingRegId, setSyncingRegId] = useState<string | null>(null);
+  // (v2.13.6) Umpan balik pengumuman: tanpa ini, klik LULUS / CADANGAN /
+  // TIDAK LULUS terasa "tidak berdampak" — sukses tidak menampilkan apa
+  // pun, hanya teks kecil "Status: ..." yang berubah. Toast + lencana
+  // status + tombol yang terkunci saat menyimpan membuat hasilnya terlihat
+  // jelas dan persisten.
+  const [pengumumanToast, setPengumumanToast] = useState<string | null>(null);
+  const [pengumumanSavingId, setPengumumanSavingId] = useState<string | null>(null);
 
   // Edit Section (CMS) Modal State
   const [editingSectionKey, setEditingSectionKey] = useState<string | null>(null);
@@ -1183,7 +1190,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     refreshData();
   };
 
+  const showPengumumanToast = (msg: string) => {
+    setPengumumanToast(msg);
+    setTimeout(() => {
+      setPengumumanToast(null);
+    }, 5000);
+  };
+
   const handleSetPengumuman = (id: string, status: 'LULUS' | 'CADANGAN' | 'TIDAK_LULUS', catatan: string) => {
+    if (pengumumanSavingId) return; // cegah klik ganda saat sinkronisasi berjalan
+    const target = registrationsList.find((r) => r.id === id);
+    const label = status === 'LULUS' ? 'LULUS' : status === 'CADANGAN' ? 'CADANGAN' : 'TIDAK LULUS';
     const updated = updateRegistration(
       id,
       (prev) => ({
@@ -1196,15 +1213,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
 
     if (updated) {
+      setPengumumanSavingId(id);
       syncRegistrationUpdateToWebhook(updated, settingsForm, { admin: true }).then((r) => {
+        setPengumumanSavingId(null);
         if (!r.success) {
           if (r.tokenExpired) {
             handleAdminSessionExpired();
             return;
           }
           alert('Pengumuman tersimpan di perangkat, tetapi GAGAL terkirim ke Google Sheets: ' + r.message);
+          return;
         }
-      }).catch(() => { alert('Pengumuman tersimpan di perangkat, tetapi gagal terhubung ke Google Sheets.'); });
+        showPengumumanToast(`Pengumuman tersimpan: ${target?.student.namaLengkap || target?.nomorPendaftaran || ''} dinyatakan ${label} — sudah terkirim ke Google Sheets.`);
+      }).catch(() => {
+        setPengumumanSavingId(null);
+        alert('Pengumuman tersimpan di perangkat, tetapi gagal terhubung ke Google Sheets.');
+      });
     }
     refreshData();
   };
@@ -1281,6 +1305,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
       </header>
+
+      {/* Toast konfirmasi pengumuman (v2.13.6) — terlihat di semua tab */}
+      {pengumumanToast && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+          <div className="p-4 rounded-2xl bg-emerald-700 text-white shadow-lg flex items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-200 shrink-0" />
+              <span className="text-xs sm:text-sm font-bold">{pengumumanToast}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPengumumanToast(null)}
+              className="text-emerald-200 hover:text-white text-xs font-semibold px-2 py-1 cursor-pointer shrink-0"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Body */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -2078,12 +2121,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <div key={reg.id} className="p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div>
                       <p className="font-bold text-slate-900 text-sm">{reg.student.namaLengkap}</p>
-                      <p className="text-xs text-slate-500">{reg.nomorPendaftaran} • Status: {reg.hasilPengumuman || 'PENDING'}</p>
+                      <p className="text-xs text-slate-500">{reg.nomorPendaftaran}</p>
+                      <div className="mt-1.5">
+                        {reg.hasilPengumuman === 'LULUS' ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">✓ LULUS — sudah diumumkan</span>
+                        ) : reg.hasilPengumuman === 'CADANGAN' ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">CADANGAN — sudah diumumkan</span>
+                        ) : reg.hasilPengumuman === 'TIDAK_LULUS' ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300">TIDAK LULUS — sudah diumumkan</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-300">Belum diumumkan</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleSetPengumuman(reg.id, 'LULUS', 'Selamat, ananda dinyatakan LULUS!')} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 text-white cursor-pointer hover:bg-emerald-800">LULUS</button>
-                      <button onClick={() => handleSetPengumuman(reg.id, 'CADANGAN', 'Status peserta: CADANGAN')} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-white cursor-pointer hover:bg-amber-600">CADANGAN</button>
-                      <button onClick={() => handleSetPengumuman(reg.id, 'TIDAK_LULUS', 'Mohon maaf, kuota penuh')} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-700 text-white cursor-pointer hover:bg-rose-800">TIDAK LULUS</button>
+                    <div className="flex flex-col items-center sm:items-end gap-1.5">
+                      <div className="flex gap-2">
+                        <button disabled={pengumumanSavingId === reg.id || reg.hasilPengumuman === 'LULUS'} onClick={() => handleSetPengumuman(reg.id, 'LULUS', 'Selamat, ananda dinyatakan LULUS!')} className={`px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 text-white cursor-pointer hover:bg-emerald-800 disabled:opacity-60 disabled:cursor-wait ${reg.hasilPengumuman === 'LULUS' ? 'ring-2 ring-emerald-600 ring-offset-1' : ''}`}>{reg.hasilPengumuman === 'LULUS' ? '✓ LULUS' : 'LULUS'}</button>
+                        <button disabled={pengumumanSavingId === reg.id || reg.hasilPengumuman === 'CADANGAN'} onClick={() => handleSetPengumuman(reg.id, 'CADANGAN', 'Status peserta: CADANGAN')} className={`px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-white cursor-pointer hover:bg-amber-600 disabled:opacity-60 disabled:cursor-wait ${reg.hasilPengumuman === 'CADANGAN' ? 'ring-2 ring-amber-500 ring-offset-1' : ''}`}>{reg.hasilPengumuman === 'CADANGAN' ? '✓ CADANGAN' : 'CADANGAN'}</button>
+                        <button disabled={pengumumanSavingId === reg.id || reg.hasilPengumuman === 'TIDAK_LULUS'} onClick={() => handleSetPengumuman(reg.id, 'TIDAK_LULUS', 'Mohon maaf, kuota penuh')} className={`px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-700 text-white cursor-pointer hover:bg-rose-800 disabled:opacity-60 disabled:cursor-wait ${reg.hasilPengumuman === 'TIDAK_LULUS' ? 'ring-2 ring-rose-600 ring-offset-1' : ''}`}>{reg.hasilPengumuman === 'TIDAK_LULUS' ? '✓ TIDAK LULUS' : 'TIDAK LULUS'}</button>
+                      </div>
+                      {pengumumanSavingId === reg.id && (
+                        <span className="text-[11px] font-bold text-slate-500 animate-pulse">Menyimpan ke Google Sheets…</span>
+                      )}
                     </div>
                   </div>
                 ))}
