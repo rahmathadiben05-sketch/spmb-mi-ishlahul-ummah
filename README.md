@@ -29,10 +29,13 @@ Frontend dan backend **terpisah**: backend sudah live sendiri dan tidak perlu di
 2. **Root Directory: `export-aistudio`** (bukan root repo).
 3. Pasang domain `spmb.ishlahul-ummah.sch.id` dan arahkan DNS ke Vercel.
 4. Backend tidak perlu di-deploy — sudah live terpisah.
+5. Bila Vercel tetap dipakai sebagai host, sambungkan ke repo GitHub ini agar push ke `main` otomatis ter-deploy (auto-deploy).
+
+Catatan: perubahan lewat panel admin (teks, galeri, biaya, pengumuman) langsung tampil tanpa push/deploy, karena datanya diambil dari backend — push GitHub hanya diperlukan untuk perubahan kode (tampilan/fitur).
 
 **Alternatif — DigitalOcean** (hosting yang dipakai pengelola domain):
 
-- **App Platform (paling mudah, mirip Vercel):** hubungkan repo ini, atur *source directory* ke `export-aistudio`, Node.js 20, build command `npm run build`, run command `npm start`, lalu pasang domain `spmb.ishlahul-ummah.sch.id`.
+- **App Platform (paling mudah, mirip Vercel):** hubungkan repo ini, atur *source directory* ke `export-aistudio`, Node.js 20, build command `npm run build`, run command `npm start`, lalu pasang domain `spmb.ishlahul-ummah.sch.id`. **Aktifkan auto-deploy dari branch `main`** — setiap push ke `main` otomatis di-build dan tayang di domain dalam beberapa menit; tidak perlu deploy manual lagi.
 - **Droplet/VPS (kontrol penuh):** install Node.js 20, clone repo, `cd export-aistudio && npm install && npm run build`, jalankan dengan PM2 (`npm start`), pasang Nginx sebagai reverse proxy ke port aplikasi, aktifkan SSL (Certbot), dan arahkan DNS domain ke IP droplet.
 - Di kedua jalur, backend tidak perlu di-deploy — sudah live terpisah.
 
