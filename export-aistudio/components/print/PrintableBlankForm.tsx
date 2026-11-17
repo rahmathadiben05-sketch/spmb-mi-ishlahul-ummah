@@ -150,21 +150,21 @@ export const PrintableBlankForm: React.FC<PrintableBlankFormProps> = ({
               <div class="section-title">II. Data Orang Tua / Wali</div>
               <div class="grid-2">
                 <div class="frow"><span class="lab">1. Nama Ayah Kandung *</span><span class="line"></span></div>
-                <div class="frow"><span class="lab">2. NIK Ayah</span><span class="line"></span></div>
+                <div class="frow"><span class="lab">2. NIK Ayah *</span><span class="line"></span></div>
               </div>
               <div class="frow"><span class="lab">3. Status Ayah</span><span class="check">☐ Masih Hidup</span><span class="check">☐ Sudah Meninggal</span><span class="check">☐ Tidak Diketahui</span></div>
               <div class="grid-2">
-                <div class="frow"><span class="lab">4. TTL Ayah</span><span class="line"></span></div>
+                <div class="frow"><span class="lab">4. TTL Ayah *</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">5. Pendidikan Ayah</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">6. Pekerjaan Ayah</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">7. Penghasilan Ayah / bulan</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">8. No. HP/WA Ayah *</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">9. Nama Ibu Kandung *</span><span class="line"></span></div>
-                <div class="frow"><span class="lab">10. NIK Ibu</span><span class="line"></span></div>
+                <div class="frow"><span class="lab">10. NIK Ibu *</span><span class="line"></span></div>
               </div>
               <div class="frow"><span class="lab">11. Status Ibu</span><span class="check">☐ Masih Hidup</span><span class="check">☐ Sudah Meninggal</span><span class="check">☐ Tidak Diketahui</span></div>
               <div class="grid-2">
-                <div class="frow"><span class="lab">12. TTL Ibu</span><span class="line"></span></div>
+                <div class="frow"><span class="lab">12. TTL Ibu *</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">13. Pendidikan Ibu</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">14. Pekerjaan Ibu</span><span class="line"></span></div>
                 <div class="frow"><span class="lab">15. Penghasilan Ibu / bulan</span><span class="line"></span></div>

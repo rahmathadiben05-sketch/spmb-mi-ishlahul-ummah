@@ -140,7 +140,7 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
   const validateNik = (nik: string | undefined, key: string, label: string, errs: Record<string, string>) => {
     const clean = (nik || '').trim();
     if (clean && !/^\d{16}$/.test(clean)) {
-      errs[key] = `${label} harus tepat 16 digit angka. Kosongkan bila tidak ada.`;
+      errs[key] = `${label} harus tepat 16 digit angka.`;
     }
   };
 
@@ -163,6 +163,17 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
     }
     if (data.ibu?.status === 'Masih Hidup' && !data.ibu?.namaLengkap?.trim()) {
       errs.ibuNama = 'Nama Ibu wajib diisi.';
+    }
+    // v2.13.14: NIK + tanggal lahir orang tua wajib bila masih hidup —
+    // supaya data EMIS lengkap sejak pendaftaran dan operator tidak perlu
+    // melihat KK lagi. Bila sudah meninggal, dikecualikan.
+    if (data.ayah?.status === 'Masih Hidup') {
+      if (!data.ayah?.nik?.trim()) errs.ayahNik = 'NIK Ayah wajib diisi (16 digit sesuai KK).';
+      if (!data.ayah?.tanggalLahir) errs.ayahTanggalLahir = 'Tanggal Lahir Ayah wajib diisi.';
+    }
+    if (data.ibu?.status === 'Masih Hidup') {
+      if (!data.ibu?.nik?.trim()) errs.ibuNik = 'NIK Ibu wajib diisi (16 digit sesuai KK).';
+      if (!data.ibu?.tanggalLahir) errs.ibuTanggalLahir = 'Tanggal Lahir Ibu wajib diisi.';
     }
     validateNik(data.ayah?.nik, 'ayahNik', 'NIK Ayah', errs);
     validateNik(data.ibu?.nik, 'ibuNik', 'NIK Ibu', errs);
@@ -272,14 +283,14 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
 
           <div>
             <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">
-              NIK Ayah Kandung <span className="text-[#626862] font-normal">(Opsional, 16 Digit)</span>
+              NIK Ayah Kandung <span className="text-rose-500">*</span> <span className="text-[#626862] font-normal">(16 Digit)</span>
             </label>
             <input
               type="text"
               maxLength={16}
               value={data.ayah?.nik || ''}
               onChange={(e) => handleFatherChange('nik', e.target.value.replace(/\D/g, ''))}
-              placeholder="16 digit NIK Ayah sesuai KK — kosongkan bila tidak ada"
+              placeholder="16 digit NIK Ayah sesuai KK"
               className={`m3-input font-mono font-medium ${
                 errors.ayahNik ? 'border-rose-500 bg-rose-50/20' : ''
               }`}
@@ -299,13 +310,16 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">Tanggal Lahir Ayah <span className="text-[#626862] font-normal">(Opsional)</span></label>
+            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">Tanggal Lahir Ayah <span className="text-rose-500">*</span></label>
             <input
               type="date"
               value={data.ayah?.tanggalLahir || ''}
               onChange={(e) => handleFatherChange('tanggalLahir', e.target.value)}
-              className="m3-input font-medium"
+              className={`m3-input font-medium ${
+                errors.ayahTanggalLahir ? 'border-rose-500 bg-rose-50/20' : ''
+              }`}
             />
+            {errors.ayahTanggalLahir && <p className="text-xs text-rose-500 mt-1">{errors.ayahTanggalLahir}</p>}
           </div>
 
           <div>
@@ -443,14 +457,14 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
 
           <div>
             <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">
-              NIK Ibu Kandung <span className="text-[#626862] font-normal">(Opsional, 16 Digit)</span>
+              NIK Ibu Kandung <span className="text-rose-500">*</span> <span className="text-[#626862] font-normal">(16 Digit)</span>
             </label>
             <input
               type="text"
               maxLength={16}
               value={data.ibu?.nik || ''}
               onChange={(e) => handleMotherChange('nik', e.target.value.replace(/\D/g, ''))}
-              placeholder="16 digit NIK Ibu sesuai KK — kosongkan bila tidak ada"
+              placeholder="16 digit NIK Ibu sesuai KK"
               className={`m3-input font-mono font-medium ${
                 errors.ibuNik ? 'border-rose-500 bg-rose-50/20' : ''
               }`}
@@ -470,13 +484,16 @@ export const WizardStep2: React.FC<WizardStep2Props> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">Tanggal Lahir Ibu <span className="text-[#626862] font-normal">(Opsional)</span></label>
+            <label className="block text-xs font-bold text-[#1A1D1A] mb-1.5 uppercase tracking-wider">Tanggal Lahir Ibu <span className="text-rose-500">*</span></label>
             <input
               type="date"
               value={data.ibu?.tanggalLahir || ''}
               onChange={(e) => handleMotherChange('tanggalLahir', e.target.value)}
-              className="m3-input font-medium"
+              className={`m3-input font-medium ${
+                errors.ibuTanggalLahir ? 'border-rose-500 bg-rose-50/20' : ''
+              }`}
             />
+            {errors.ibuTanggalLahir && <p className="text-xs text-rose-500 mt-1">{errors.ibuTanggalLahir}</p>}
           </div>
 
           <div>

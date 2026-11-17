@@ -85,6 +85,9 @@
  *   akses disimpan sendiri dan ikut dicari getRegistration, supaya login
  *   WA tetap jalan bila Langkah 2 mengubah nomor ayah/ibu/wali;
  *   doGet/ping 'v2.12'.
+ * v2.13 (2026-11-17): NIK + tanggal lahir Ayah/Ibu wajib bila masih
+ *   hidup (keputusan Rahmat) — ditegakkan di save + update, supaya data
+ *   EMIS lengkap sejak pendaftaran; doGet/ping 'v2.13'.
  * PLUS login wali: action getRegistration (satu record berdasarkan
  * nomor pendaftaran ATAU nomor WA + PIN 6 digit, PIN diverifikasi di
  * server; gagal selalu satu respons generik yang sama supaya tidak
@@ -506,7 +509,7 @@ function num(v) {
 function doGet(e) {
   return responseJSON({
     success: true,
-    version: 'v2.12',
+    version: 'v2.13',
     service: 'SPMB MI Ishlahul Ummah',
     message: 'Backend Google Apps Script SPMB aktif dan siap menerima data.',
     timestamp: new Date().toISOString()
@@ -1966,6 +1969,29 @@ function saveRegistrationRecord(record) {
     return { success: false, error: 'Nomor WhatsApp orang tua/wali wajib diisi dengan nomor yang valid (minimal 10 digit angka).' };
   }
 
+  // (v2.13) NIK + tanggal lahir orang tua wajib bila masih hidup —
+  // keputusan Rahmat 2026-11-17: supaya data EMIS lengkap sejak
+  // pendaftaran dan operator tidak perlu melihat KK lagi. Bila sudah
+  // meninggal, dikecualikan (nama + NIK + tgl lahir boleh kosong).
+  var ayahSave = parentSave.ayah || {};
+  var ibuSave = parentSave.ibu || {};
+  if (s(ayahSave.status) === 'Masih Hidup') {
+    if (!/^\d{16}$/.test(s(ayahSave.nik))) {
+      return { success: false, error: 'NIK Ayah wajib diisi (16 digit angka).' };
+    }
+    if (!s(ayahSave.tanggalLahir).trim()) {
+      return { success: false, error: 'Tanggal Lahir Ayah wajib diisi.' };
+    }
+  }
+  if (s(ibuSave.status) === 'Masih Hidup') {
+    if (!/^\d{16}$/.test(s(ibuSave.nik))) {
+      return { success: false, error: 'NIK Ibu wajib diisi (16 digit angka).' };
+    }
+    if (!s(ibuSave.tanggalLahir).trim()) {
+      return { success: false, error: 'Tanggal Lahir Ibu wajib diisi.' };
+    }
+  }
+
   // Duplikat (NIK / NISN) — cek awal tanpa lock; dicek ulang di dalam lock
   // sebelum appendRow supaya tetap benar bila dua kiriman bersamaan.
   // Pesan SENGAJA generik (v2.9): tanpa nilai NIK/NISN, tanpa nomor baris.
@@ -2085,6 +2111,26 @@ function updateRegistrationRecord(record, adminToken) {
     var hpUpd = [normalizeWa((parentUpd.ayah || {}).noHp), normalizeWa((parentUpd.ibu || {}).noHp), normalizeWa((parentUpd.wali || {}).noHp)];
     if (hpUpd[0].length < 10 && hpUpd[1].length < 10 && hpUpd[2].length < 10) {
       return { success: false, error: 'Nomor WhatsApp orang tua/wali wajib diisi dengan nomor yang valid (minimal 10 digit angka).' };
+    }
+    // (v2.13) NIK + tanggal lahir orang tua wajib bila masih hidup —
+    // sama seperti save (lihat saveRegistrationRecord).
+    var ayahUpd = parentUpd.ayah || {};
+    var ibuUpd = parentUpd.ibu || {};
+    if (s(ayahUpd.status) === 'Masih Hidup') {
+      if (!/^\d{16}$/.test(s(ayahUpd.nik))) {
+        return { success: false, error: 'NIK Ayah wajib diisi (16 digit angka).' };
+      }
+      if (!s(ayahUpd.tanggalLahir).trim()) {
+        return { success: false, error: 'Tanggal Lahir Ayah wajib diisi.' };
+      }
+    }
+    if (s(ibuUpd.status) === 'Masih Hidup') {
+      if (!/^\d{16}$/.test(s(ibuUpd.nik))) {
+        return { success: false, error: 'NIK Ibu wajib diisi (16 digit angka).' };
+      }
+      if (!s(ibuUpd.tanggalLahir).trim()) {
+        return { success: false, error: 'Tanggal Lahir Ibu wajib diisi.' };
+      }
     }
     if (!s(studentUpd.kewarganegaraan).trim()) {
       return { success: false, error: 'Kewarganegaraan wajib diisi (WNI/WNA).' };

@@ -582,7 +582,7 @@ export const WizardReview: React.FC<WizardReviewProps> = ({
                 <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#F0F3F0]">
                   <div>
                     <span className="text-[#626862] text-[10px] block">TTL</span>
-                    <span className="font-medium text-[#1A1D1A]">{parent.ayah.tempatLahir && parent.ayah.tanggalLahir ? `${parent.ayah.tempatLahir}, ${formatTanggal(parent.ayah.tanggalLahir)}` : '-'}</span>
+                    <span className="font-medium text-[#1A1D1A]">{[parent.ayah.tempatLahir, parent.ayah.tanggalLahir ? formatTanggal(parent.ayah.tanggalLahir) : ''].filter(Boolean).join(', ') || '-'}</span>
                   </div>
                   <div>
                     <span className="text-[#626862] text-[10px] block">Pendidikan</span>
@@ -640,7 +640,7 @@ export const WizardReview: React.FC<WizardReviewProps> = ({
                 <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#F0F3F0]">
                   <div>
                     <span className="text-[#626862] text-[10px] block">TTL</span>
-                    <span className="font-medium text-[#1A1D1A]">{parent.ibu.tempatLahir && parent.ibu.tanggalLahir ? `${parent.ibu.tempatLahir}, ${formatTanggal(parent.ibu.tanggalLahir)}` : '-'}</span>
+                    <span className="font-medium text-[#1A1D1A]">{[parent.ibu.tempatLahir, parent.ibu.tanggalLahir ? formatTanggal(parent.ibu.tanggalLahir) : ''].filter(Boolean).join(', ') || '-'}</span>
                   </div>
                   <div>
                     <span className="text-[#626862] text-[10px] block">Pendidikan</span>
@@ -689,7 +689,7 @@ export const WizardReview: React.FC<WizardReviewProps> = ({
                   </div>
                   <div>
                     <span className="text-[#626862] text-[10px] block">TTL Wali</span>
-                    <span className="font-medium text-[#1A1D1A]">{parent.wali.tempatLahir && parent.wali.tanggalLahir ? `${parent.wali.tempatLahir}, ${formatTanggal(parent.wali.tanggalLahir)}` : '-'}</span>
+                    <span className="font-medium text-[#1A1D1A]">{[parent.wali.tempatLahir, parent.wali.tanggalLahir ? formatTanggal(parent.wali.tanggalLahir) : ''].filter(Boolean).join(', ') || '-'}</span>
                   </div>
                   <div>
                     <span className="text-[#626862] text-[10px] block">Hubungan</span>
