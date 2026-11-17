@@ -308,3 +308,27 @@
     transition: none;
   }
 }
+
+/* Galeri: jalan otomatis ke kiri, looping tanpa putus (2 salinan foto, geser -50%) */
+@keyframes galeri-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.galeri-viewport {
+  overflow: hidden;
+}
+.animate-galeri-marquee {
+  animation: galeri-marquee 45s linear infinite;
+  will-change: transform;
+}
+.galeri-viewport:hover .animate-galeri-marquee {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-galeri-marquee {
+    animation: none;
+  }
+  .galeri-viewport {
+    overflow-x: auto;
+  }
+}

@@ -22,24 +22,30 @@ export const LandingGallery: React.FC<LandingGalleryProps> = ({ settings }) => {
             Suasana Madrasah Ibtidaiyah Ishlahul Ummah dan berbagai kegiatan siswa siswi
           </h2>
           <p className="text-base sm:text-lg text-[#78716C] mt-3 leading-relaxed font-normal">
-            Geser untuk melihat kegiatan dan lingkungan belajar santri.
+            Galeri bergerak otomatis — arahkan kursor ke foto untuk menjeda.
           </p>
         </div>
 
-        <div className="flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 justify-start lg:justify-center">
-          {photos.map((url, idx) => (
-            <div
-              key={idx}
-              className="snap-center shrink-0 w-[280px] sm:w-[360px] aspect-[4/3] rounded-xl overflow-hidden border border-[#E7E5E4] shadow-xs bg-[#F7F4EC]"
-            >
-              <img
-                src={url}
-                alt={`Galeri madrasah ${idx + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          ))}
+        <div className="galeri-viewport -mx-4 px-4 sm:mx-0 sm:px-0 pb-4">
+          <div className="animate-galeri-marquee flex w-max">
+            {[0, 1].map((copy) => (
+              <div key={copy} aria-hidden={copy === 1} className="flex shrink-0 gap-4 sm:gap-5 pr-4 sm:pr-5">
+                {photos.map((url, idx) => (
+                  <div
+                    key={idx}
+                    className="shrink-0 w-[280px] sm:w-[360px] aspect-[4/3] rounded-xl overflow-hidden border border-[#E7E5E4] shadow-xs bg-[#F7F4EC]"
+                  >
+                    <img
+                      src={url}
+                      alt={copy === 0 ? `Galeri madrasah ${idx + 1}` : ''}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
